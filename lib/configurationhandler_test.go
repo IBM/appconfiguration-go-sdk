@@ -25,9 +25,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/IBM/appconfiguration-go-sdk/lib/models"
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus/hooks/test"

@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	models "github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
+	models "github.com/IBM/appconfiguration-go-sdk/lib/models"
 	mock "github.com/stretchr/testify/mock"
 )
 

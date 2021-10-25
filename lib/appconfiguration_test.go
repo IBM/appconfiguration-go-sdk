@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
+	"github.com/IBM/appconfiguration-go-sdk/lib/models"
 	// "github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 
 	"github.com/stretchr/testify/assert"

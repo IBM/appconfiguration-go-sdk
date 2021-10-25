@@ -21,8 +21,8 @@ import (
 	"os"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/IBM/appconfiguration-go-sdk/lib/models"
 )
 
 // AppConfigurationInterface contains methods used to interact with certain app configuration services
