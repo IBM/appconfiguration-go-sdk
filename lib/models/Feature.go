@@ -26,6 +26,20 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
+// FeatureInterface contains methods used to interact with certain app configuration feature services
+// IMPORTANT: Any change in this interface requires re-generation of mocks using command "$GOPATH/bin/mockery -name FeatureInterface"
+type FeatureInterface interface {
+	GetFeatureName() string
+	GetDisabledValue() interface{}
+	GetEnabledValue() interface{}
+	GetFeatureID() string
+	GetFeatureDataType() string
+	GetFeatureDataFormat() string
+	IsEnabled() bool
+	GetSegmentRules() []SegmentRule
+	GetCurrentValue(entityID string, entityAttributes map[string]interface{}) interface{}
+}
+
 // Feature : Feature struct
 type Feature struct {
 	Name          string        `json:"name"`
@@ -36,6 +50,11 @@ type Feature struct {
 	DisabledValue interface{}   `json:"disabled_value"`
 	SegmentRules  []SegmentRule `json:"segment_rules"`
 	Enabled       bool          `json:"enabled"`
+}
+
+// NewFeature : New object used for mocking
+func NewFeature() FeatureInterface {
+	return &Feature{}
 }
 
 // GetFeatureName : Get Feature Name
