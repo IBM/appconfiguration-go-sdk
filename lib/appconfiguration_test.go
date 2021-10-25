@@ -17,7 +17,6 @@
 package lib
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -94,7 +93,7 @@ func TestSetContext(t *testing.T) {
 		BootstrapFile:           "saflights/flights.json",
 		LiveConfigUpdateEnabled: F,
 	})
-	fmt.Println("hook.LastEntry().Message =", hook.LastEntry().Message)
+
 	if !strings.EqualFold(hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.") {
 		assert.Equal(t, hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.")
 	}
