@@ -17,6 +17,8 @@
 package lib
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
@@ -87,13 +89,14 @@ func TestSetContext(t *testing.T) {
 	ac.isInitialized = true
 	ac.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "saflights/flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: F,
 	}, ContextOptions{
 		BootstrapFile:           "saflights/flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: F,
 	})
-	if hook.LastEntry().Message != "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed." {
-		t.Errorf("Test failed: Incorrect error message")
+	fmt.Println("hook.LastEntry().Message =", hook.LastEntry().Message)
+	if !strings.EqualFold(hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.") {
+		assert.Equal(t, hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.")
 	}
 	reset(ac)
 
@@ -103,7 +106,7 @@ func TestSetContext(t *testing.T) {
 	assert.Equal(t, false, ac.isInitializedConfig)
 	ac.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "saflights/flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: F,
 	})
 	assert.Equal(t, true, ac.isInitializedConfig)
 	reset(ac)
@@ -113,12 +116,10 @@ func TestSetContext(t *testing.T) {
 	ac.isInitialized = true
 	assert.Equal(t, false, ac.isInitializedConfig)
 	ac.SetContext("c1", "dev", ContextOptions{
-		BootstrapFile:           "",
-		LiveConfigUpdateEnabled: &F,
+		ConfigurationFile:       "",
+		LiveConfigUpdateEnabled: F,
 	})
-	if hook.LastEntry().Message != "AppConfiguration - Provide configuration_file value when live_config_update_enabled is false." {
-		t.Errorf("Test failed: Incorrect error message")
-	}
+	assert.Equal(t, hook.LastEntry().Message, "AppConfiguration - Provide bootstrap_file value when live_config_update_enabled is false.")
 	reset(ac)
 }
 func TestGetFeature(t *testing.T) {

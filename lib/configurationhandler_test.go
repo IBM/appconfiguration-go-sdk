@@ -54,7 +54,7 @@ func TestConfigHandlerSetContext(t *testing.T) {
 	ch := GetConfigurationHandlerInstance()
 	ch.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: F,
 	})
 	assert.Equal(t, "c1", ch.collectionID)
 	assert.Equal(t, "dev", ch.environmentID)
