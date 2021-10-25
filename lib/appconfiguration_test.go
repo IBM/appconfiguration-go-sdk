@@ -17,7 +17,6 @@
 package lib
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/models"
@@ -94,9 +93,7 @@ func TestSetContext(t *testing.T) {
 		LiveConfigUpdateEnabled: F,
 	})
 
-	if !strings.EqualFold(hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.") {
-		assert.Equal(t, hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.")
-	}
+	assert.Equal(t, hook.LastEntry().Message, "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed.")
 	reset(ac)
 
 	// when collection id and environment id is provided successfully and the number of context options is 1. (Bootstrap file evaluation)
