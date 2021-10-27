@@ -99,7 +99,7 @@ case of App Configuration server being unreachable, the latest configurations at
 application to continue working.
 
 Please note that PersistentCacheDirectory (or cache file) is not deleted in any case. For example, consider the case when a kubernetes pod is
-restarted and the cache file (appconfiguration.json) was stored in ephemeral volume of the pod. As pod gets restarted, kubernetes destroys the ephermal volume in the pod, hence the cache file gets deleted. Make sure you use the persistent volume to store the cache file.
+restarted and the cache file (appconfiguration.json) was stored in ephemeral volume of the pod. As pod gets restarted, kubernetes destroys the ephermal volume in the pod, hence the cache file gets deleted. So, make sure you use the persistent volume to store the cache file.
 
 ### (Optional)
 
