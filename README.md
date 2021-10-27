@@ -91,7 +91,7 @@ appConfiguration.SetContext(collectionId, environmentId, AppConfiguration.Contex
 ```
 
 * PersistentCacheDirectory: Absolute path to a directory which has read & write permission for the user. The SDK will
-  create a file - `appConfiguration.json` in the specified directory, and it will be used as the persistent cache to
+  create a file - `appconfiguration.json` in the specified directory, and it will be used as the persistent cache to
   store the App Configuration service information.
 
 When persistent cache is enabled, the SDK will keep the last known good configuration at the persistent cache. In the
