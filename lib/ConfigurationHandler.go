@@ -20,17 +20,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"github.com/IBM/go-sdk-core/v5/core"
-	"github.com/gorilla/websocket"
 	"net/http"
 	"path"
 	"sync"
 	"time"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/IBM/appconfiguration-go-sdk/lib/models"
+	"github.com/IBM/go-sdk-core/v5/core"
+	"github.com/gorilla/websocket"
 )
 
 type configurationUpdateListenerFunc func()

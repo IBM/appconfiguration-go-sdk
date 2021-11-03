@@ -21,9 +21,16 @@ import (
 	"os"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/IBM/appconfiguration-go-sdk/lib/models"
 )
+
+// AppConfigurationInterface contains methods used to interact with certain app configuration services
+// IMPORTANT: Any change in this interface requires re-generation of mocks using command "$GOPATH/bin/mockery -name AppConfigurationInterface"
+type AppConfigurationInterface interface {
+	GetFeature(featureID string) (models.Feature, error)
+	GetFeatures() (map[string]models.Feature, error)
+}
 
 // AppConfiguration : Struct having init and configInstance.
 type AppConfiguration struct {

@@ -1,11 +1,11 @@
 lint:
-	golint lib && golint lib/internal/models && golint lib/internal/utils && golint lib/internal/messages && golint lib/internal/constants && golint examples
+	golint lib && golint lib/models && golint lib/internal/utils && golint lib/internal/messages && golint lib/internal/constants && golint examples
 
 testLib:
 	cd lib/ && go test -coverprofile=coverage.out
 
 testLibModels:
-	cd lib/internal/models && go test -coverprofile=coverage.out 
+	cd lib/models && go test -coverprofile=coverage.out 
 	
 testLibUtils:
 	cd lib/internal/utils && go test -coverprofile=coverage.out 
