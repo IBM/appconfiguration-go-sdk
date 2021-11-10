@@ -24,8 +24,7 @@ the cloud to activate or deactivate features in your application or environment,
 properties for distributed applications centrally.
 
 ## Installation
-
-**The current version of this SDK: 0.2.1**
+**Note: The v1.x.x versions of the App Configuration Go SDK have been retracted. Use the latest available version of the SDK.**
 
 There are a few different ways to download and install the IBM App Configuration Go SDK project for use by your Go
 application:
@@ -35,7 +34,7 @@ application:
 Use this command to download and install the SDK (along with its dependencies) to allow your Go application to use it:
 
 ```
-go get github.com/IBM/appconfiguration-go-sdk@v0.2.1
+go get -u github.com/IBM/appconfiguration-go-sdk@latest
 ```
 
 #### Go modules
