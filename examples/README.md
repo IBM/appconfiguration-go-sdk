@@ -95,7 +95,7 @@ Click Save rule & Add the targeting.
 
 ```bash
 $ cd ./examples
-$ go get -u github.com/IBM/appconfiguration-go-sdk
+$ go mod tidy
 $ go run main.go
 ```
 

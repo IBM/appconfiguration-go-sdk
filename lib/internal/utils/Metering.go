@@ -32,7 +32,7 @@ import (
 type Usages struct {
 	FeatureID      string      `json:"feature_id,omitempty"`
 	PropertyID     string      `json:"property_id,omitempty"`
-	EntityID       string      `json:"entity_id"`
+	EntityID       interface{} `json:"entity_id"`
 	SegmentID      interface{} `json:"segment_id"`
 	EvaluationTime string      `json:"evaluation_time"`
 	Count          int64       `json:"count"`
@@ -201,12 +201,16 @@ func (mt *Metering) buildRequestBody(sendMeteringData map[string]map[string]map[
 							} else {
 								usages.PropertyID = featureID
 							}
+							if entityID == constants.DefaultEntityID {
+								usages.EntityID = nil
+							} else {
+								usages.EntityID = entityID
+							}
 							if segmentID == constants.DefaultSegmentID {
 								usages.SegmentID = nil
 							} else {
 								usages.SegmentID = segmentID
 							}
-							usages.EntityID = entityID
 							usages.EvaluationTime = val.evaluationTime
 							usages.Count = val.count
 							usagesArray = append(usagesArray, usages)

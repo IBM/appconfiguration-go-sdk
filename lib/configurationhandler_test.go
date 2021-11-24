@@ -50,11 +50,10 @@ func TestInitConfigurationHandlerInstance(t *testing.T) {
 }
 func TestConfigHandlerSetContext(t *testing.T) {
 	// test set context when initialised properly
-	F := false
 	ch := GetConfigurationHandlerInstance()
 	ch.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: false,
 	})
 	assert.Equal(t, "c1", ch.collectionID)
 	assert.Equal(t, "dev", ch.environmentID)

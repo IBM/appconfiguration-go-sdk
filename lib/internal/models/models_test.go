@@ -152,6 +152,13 @@ func TestFeature(t *testing.T) {
 	if feature.GetCurrentValue("entityID123", entityMap) != float64(1) {
 		t.Error("Expected TestFeatureGetCurrentValueNumeric test case to pass")
 	}
+	feature.DataType = "INVALID_DATATYPE"
+	feature.Format = ""
+	feature.EnabledValue = float64(1)
+	feature.DisabledValue = float64(0)
+	if feature.GetCurrentValue("entityID123", entityMap) != nil {
+		t.Error("Expected TestFeatureGetCurrentValueWithInvalidFeatureDatatype test case to pass")
+	}
 	feature.DataType = "BOOLEAN"
 	feature.EnabledValue = true
 	feature.DisabledValue = false
@@ -233,7 +240,12 @@ func TestProperty(t *testing.T) {
 	if property.GetCurrentValue("entityID123", entityMap) != float64(1) {
 		t.Error("Expected TestPropertyGetCurrentValueNumeric test case to pass")
 	}
-
+	property.DataType = "INVALID_DATATYPE"
+	property.Format = ""
+	property.Value = float64(1)
+	if property.GetCurrentValue("entityID123", entityMap) != nil {
+		t.Error("Expected TestPropertyGetCurrentValueWithInvalidPropertyDatatype test case to pass")
+	}
 	property.DataType = "BOOLEAN"
 	property.Value = true
 

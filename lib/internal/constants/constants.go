@@ -19,11 +19,14 @@ package constants
 // DefaultSegmentID : Default Segment ID
 const DefaultSegmentID = "$$null$$"
 
+// DefaultEntityID : Default Entity ID
+const DefaultEntityID = "$$null$$"
+
 // DefaultUsageLimit : Default Usage Limit
 const DefaultUsageLimit = 25
 
 // UserAgent specifies the user agent name
-const UserAgent = "appconfiguration-go-sdk/0.2.1"
+const UserAgent = "appconfiguration-go-sdk/0.2.2"
 
 // ConfigurationFile : Name of file to which configurations will be written
 const ConfigurationFile = "appconfiguration.json"

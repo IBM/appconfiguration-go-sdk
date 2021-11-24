@@ -81,6 +81,9 @@ func (f *Feature) GetFeatureDataFormat() string {
 
 // IsEnabled : Is Enabled
 func (f *Feature) IsEnabled() bool {
+	defer func() {
+		utils.GetMeteringInstance().RecordEvaluation(f.GetFeatureID(), "", constants.DefaultEntityID, constants.DefaultSegmentID)
+	}()
 	return f.Enabled
 }
 
@@ -114,7 +117,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 		utils.GetMeteringInstance().RecordEvaluation(f.GetFeatureID(), "", entityID, evaluatedSegmentID)
 	}()
 
-	if f.IsEnabled() {
+	if f.Enabled {
 		log.Debug(messages.EvaluatingFeature)
 		defer utils.GracefullyHandleError()
 
