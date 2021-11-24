@@ -82,15 +82,14 @@ func TestSetContext(t *testing.T) {
 	reset(ac)
 
 	// when collection id and environment id is provided successfully and the number of context options is more than 1
-	F := false
 	ac.Init("a", "b", "c")
 	ac.isInitialized = true
 	ac.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "saflights/flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: false,
 	}, ContextOptions{
 		BootstrapFile:           "saflights/flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: false,
 	})
 	if hook.LastEntry().Message != "AppConfiguration - Incorrect usage of context options. At most of one ContextOptions struct should be passed." {
 		t.Errorf("Test failed: Incorrect error message")
@@ -103,7 +102,7 @@ func TestSetContext(t *testing.T) {
 	assert.Equal(t, false, ac.isInitializedConfig)
 	ac.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "saflights/flights.json",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: false,
 	})
 	assert.Equal(t, true, ac.isInitializedConfig)
 	reset(ac)
@@ -114,9 +113,9 @@ func TestSetContext(t *testing.T) {
 	assert.Equal(t, false, ac.isInitializedConfig)
 	ac.SetContext("c1", "dev", ContextOptions{
 		BootstrapFile:           "",
-		LiveConfigUpdateEnabled: &F,
+		LiveConfigUpdateEnabled: false,
 	})
-	if hook.LastEntry().Message != "AppConfiguration - Provide configuration_file value when live_config_update_enabled is false." {
+	if hook.LastEntry().Message != "AppConfiguration - Provide bootstrap_file value when live_config_update_enabled is false." {
 		t.Errorf("Test failed: Incorrect error message")
 	}
 	reset(ac)
