@@ -23,6 +23,9 @@ define feature flags or properties, organized into collections and targeted to s
 the cloud to activate or deactivate features in your application or environment, when required. You can also manage the
 properties for distributed applications centrally.
 
+## Prerequisites
+- Go version(1.17, 1.16.7) or later is recommended
+
 ## Installation
 **Note: The v1.x.x versions of the App Configuration Go SDK have been retracted. Use the latest available version of the SDK.**
 
