@@ -57,13 +57,19 @@ then run `go mod tidy` to download and install the new dependency and update you
 Initialize the sdk to connect with your App Configuration service instance.
 
 ```go
-appConfiguration := AppConfiguration.GetInstance()
-appConfiguration.Init("region", "guid", "apikey")
-
 collectionId := "airlines-webapp"
 environmentId := "dev"
-appConfiguration.SetContext(collectionId, environmentId)
+
+appConfigClient := AppConfiguration.GetInstance()
+appConfigClient.Init("region", "guid", "apikey")
+appConfigClient.SetContext(collectionId, environmentId)
 ```
+
+:red_circle: **Important** :red_circle:
+
+The **`Init()`** and **`SetContext()`** are the initialisation methods and should be invoked **only once** using
+appConfigClient. The appConfigClient, once initialised, can be obtained across modules
+using **`AppConfiguration.GetInstance()`**. [See this example below](#fetching-the-appconfigclient-across-other-modules).
 
 - region : Region name where the App Configuration service instance is created. Use
     - `AppConfiguration.REGION_US_SOUTH` for Dallas
@@ -84,10 +90,10 @@ persistent cache to store the App Configuration data that will be available acro
 
 ```go
 // 1. default (without persistent cache)
-appConfiguration.SetContext(collectionId, environmentId)
+appConfigClient.SetContext(collectionId, environmentId)
 
-// 2. with persistent cache
-appConfiguration.SetContext(collectionId, environmentId, AppConfiguration.ContextOptions{
+// 2. optional (with persistent cache)
+appConfigClient.SetContext(collectionId, environmentId, AppConfiguration.ContextOptions{
     PersistentCacheDirectory: "/var/lib/docker/volumes/",
 })
 ```
@@ -108,7 +114,7 @@ The SDK is also designed to serve configurations, perform feature flag & propert
 App Configuration service.
 
 ```go
-appConfiguration.SetContext(collectionId, environmentId, AppConfiguration.ContextOptions{
+appConfigClient.SetContext(collectionId, environmentId, AppConfiguration.ContextOptions{
     BootstrapFile: "saflights/flights.json",
     LiveConfigUpdateEnabled: false,
 })
@@ -122,7 +128,7 @@ appConfiguration.SetContext(collectionId, environmentId, AppConfiguration.Contex
 ## Get single feature
 
 ```go
-feature, err := appConfiguration.GetFeature("online-check-in")
+feature, err := appConfigClient.GetFeature("online-check-in")
 if err == nil {
     fmt.Println("Feature Name", feature.GetFeatureName())
     fmt.Println("Feature Id", feature.GetFeatureID())
@@ -139,7 +145,7 @@ if err == nil {
 ## Get all features
 
 ```go
-features, err := appConfiguration.GetFeatures()
+features, err := appConfigClient.GetFeatures()
 if err == nil {
     feature := features["online-check-in"]
     
@@ -168,7 +174,7 @@ featureVal := feature.GetCurrentValue(entityId, entityAttributes)
 ## Get single property
 
 ```go
-property, err := appConfiguration.GetProperty("check-in-charges")
+property, err := appConfigClient.GetProperty("check-in-charges")
 if err == nil {
     fmt.Println("Property Name", property.GetPropertyName())
     fmt.Println("Property Id", property.GetPropertyID())
@@ -179,7 +185,7 @@ if err == nil {
 ## Get all properties
 
 ```go
-properties, err := appConfiguration.GetProperties()
+properties, err := appConfigClient.GetProperties()
 if err == nil {
     property := properties["check-in-charges"]
     
@@ -204,6 +210,25 @@ entityAttributes["country"] = "India"
 propertyVal := property.GetCurrentValue(entityId, entityAttributes)
 ```
 
+## Fetching the appConfigClient across other modules
+
+Once the SDK is initialized, the appConfigClient can be obtained across other modules as shown below:
+
+```go
+// **other modules**
+
+import (
+        AppConfiguration "github.com/IBM/appconfiguration-go-sdk/lib"
+)
+
+appConfigClient := AppConfiguration.GetInstance()
+feature, err := appConfigClient.GetFeature("online-check-in")
+if (err == nil) {
+    enabled := feature.IsEnabled()
+    featureValue := feature.GetCurrentValue(entityId, entityAttributes)
+}
+```
+
 ## Supported Data types
 
 App Configuration service allows to configure the feature flag and properties in the following data types : Boolean,
@@ -223,7 +248,7 @@ format accordingly as shown in the below table.
 <details><summary>Feature flag</summary>
 
   ```go
-feature, err := appConfiguration.GetFeature("json-feature")
+feature, err := appConfigClient.GetFeature("json-feature")
 if err == nil {
     feature.GetFeatureDataType() // STRING
     feature.GetFeatureDataFormat() // JSON
@@ -233,7 +258,7 @@ if err == nil {
     result.(map[string]interface{})["key"] // returns the value of the key
 }
 
-feature, err := appConfiguration.GetFeature("yaml-feature")
+feature, err := appConfigClient.GetFeature("yaml-feature")
 if err == nil {
     feature.GetFeatureDataType() // STRING
     feature.GetFeatureDataFormat() // YAML
@@ -248,7 +273,7 @@ if err == nil {
 <details><summary>Property</summary>
 
   ```go
-property, err := appConfiguration.GetProperty("json-property")
+property, err := appConfigClient.GetProperty("json-property")
 if err == nil {
     property.GetPropertyDataType() // STRING
     property.GetPropertyDataFormat() // JSON
@@ -258,7 +283,7 @@ if err == nil {
     result.(map[string]interface{})["key"] // returns the value of the key
 }
 
-property, err := appConfiguration.GetProperty("yaml-property")
+property, err := appConfigClient.GetProperty("yaml-property")
 if err == nil {
     property.GetPropertyDataType() // STRING
     property.GetPropertyDataFormat() // YAML
@@ -273,24 +298,29 @@ if err == nil {
 
 ## Set listener for feature or property data changes
 
-To listen to the configurations changes in your App Configuration service instance, implement the `RegisterConfigurationUpdateListener` event listener as mentioned below 
+The SDK provides mechanism to notify you in real-time when feature flag's or property's configuration changes.
+You can subscribe to configuration changes using the same appConfigClient.
 
 ```go
-appConfiguration.RegisterConfigurationUpdateListener(func () {
-    fmt.Println("Get your feature/property value now ")
+appConfigClient.RegisterConfigurationUpdateListener(func () {
+      // **add your code**
+      // To find the effect of any configuration changes, you can call the feature or property related methods
+
+      // feature, err := appConfigClient.GetFeature("json-feature")
+      // newValue := feature.GetCurrentValue(entityID, entityAttributes)
 })
 ```
 
 ## Fetch latest data
 
 ```go
-appConfiguration.FetchConfigurations()
+appConfigClient.FetchConfigurations()
 ```
 
 ## Enable debugger (Optional)
 
 ```go
-appConfiguration.EnableDebug(true)
+appConfigClient.EnableDebug(true)
 ```
 
 ## Examples
