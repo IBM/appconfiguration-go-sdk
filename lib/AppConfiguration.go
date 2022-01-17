@@ -56,6 +56,9 @@ const REGION_EU_GB = "eu-gb"
 // REGION_AU_SYD : Sydney Region
 const REGION_AU_SYD = "au-syd"
 
+// REGION_US_EAST : Washington DC Region
+const REGION_US_EAST = "us-east"
+
 func init() {
 	log.SetLogLevel("info")
 }
