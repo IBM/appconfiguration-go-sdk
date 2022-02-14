@@ -1,7 +1,1 @@
-[
-{
-"cve": "SNYK-GOLANG-GITHUBCOMGOBUFFALOPACKRV2-1920670",
-"expiration": "2022-02-01T00:00:00+05:30",
-"comment": "Details on why this is ignored is documented in https://github.ibm.com/devx-app-services/planning/issues/7876"
-}
-]
+[]
