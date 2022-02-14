@@ -74,12 +74,12 @@ func TestSetContext(t *testing.T) {
 	reset(ac)
 
 	// when collection id and environment id is provided successfully. (in-memory cache)
-	ac.Init("a", "b", "c")
-	ac.isInitialized = true
-	assert.Equal(t, false, ac.isInitializedConfig)
-	ac.SetContext("c1", "dev")
-	assert.Equal(t, true, ac.isInitializedConfig)
-	reset(ac)
+	//ac.Init("a", "b", "c")
+	//ac.isInitialized = true
+	//assert.Equal(t, false, ac.isInitializedConfig)
+	//ac.SetContext("c1", "dev")
+	//assert.Equal(t, true, ac.isInitializedConfig)
+	//reset(ac)
 
 	// when collection id and environment id is provided successfully and the number of context options is more than 1
 	ac.Init("a", "b", "c")
@@ -184,6 +184,24 @@ func TestGetProperties(t *testing.T) {
 		assert.Equal(t, "nodeReplica", properties["PID1"].Name)
 	}
 	reset(ac)
+}
+
+func TestFetchConfigurations(t *testing.T) {
+	// test fetch configurations when sdk is not initialised properly
+	ac := GetInstance()
+	ac.FetchConfigurations()
+	if hook.LastEntry().Message != "AppConfiguration - Invalid action. You can perform this action only after a successful initialization and setting the context. Check the Init and SetContext section for errors." {
+		t.Errorf("Test failed: Incorrect error message")
+	}
+}
+
+func TestRegisterConfigurationsUpdateListener(t *testing.T) {
+	// test TestRegisterConfigurationsUpdateListener when sdk is not initialised properly
+	ac := GetInstance()
+	ac.RegisterConfigurationUpdateListener(func() {})
+	if hook.LastEntry().Message != "AppConfiguration - Invalid action. You can perform this action only after a successful initialization and setting the context. Check the Init and SetContext section for errors." {
+		t.Errorf("Test failed: Incorrect error message")
+	}
 }
 
 func reset(ac *AppConfiguration) {

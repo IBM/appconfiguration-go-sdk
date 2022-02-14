@@ -18,32 +18,34 @@ package utils
 
 import (
 	"encoding/json"
-
 	"github.com/IBM/go-sdk-core/v5/core"
+	"sync"
 )
 
 // APIManager : wrapper struct over core base service.
 type APIManager struct {
-	baseService *core.BaseService
+	baseService    *core.BaseService
+	serviceOptions *core.ServiceOptions
 }
 
 var apiManagerInstance *APIManager
+var once sync.Once
 
 // GetAPIManagerInstance : returns APIManager instance.
 func GetAPIManagerInstance() *APIManager {
-	if apiManagerInstance == nil {
-		apiManagerInstance = new(APIManager)
-	}
+	once.Do(func() {
+		apiManagerInstance = &APIManager{}
+		apiManagerInstance.serviceOptions = &core.ServiceOptions{
+			URL:           urlBuilderInstance.GetBaseServiceURL(),
+			Authenticator: urlBuilderInstance.GetAuthenticator(),
+		}
+		apiManagerInstance.baseService, _ = core.NewBaseService(apiManagerInstance.serviceOptions)
+	})
 	return apiManagerInstance
 }
 
 // Request : wrapper over core base service request method.
 func (ap *APIManager) Request(builder *core.RequestBuilder) *core.DetailedResponse {
-	serviceOptions := &core.ServiceOptions{
-		URL:           urlBuilderInstance.GetBaseServiceURL(),
-		Authenticator: urlBuilderInstance.GetAuthenticator(),
-	}
-	ap.baseService, _ = core.NewBaseService(serviceOptions)
 	request, err := builder.Build()
 	if err != nil {
 		return nil
