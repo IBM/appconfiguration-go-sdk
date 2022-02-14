@@ -76,9 +76,13 @@ func (ub *URLBuilder) Init(collectionID string, environmentID string, region str
 	}
 	ub.webSocketBase += ub.service + ub.wsURL + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
 	// Create the authenticator.
-	ub.authenticator = &core.IamAuthenticator{
-		ApiKey: apikey,
-		URL:    ub.iamURL,
+	var err error
+	ub.authenticator, err = core.NewIamAuthenticatorBuilder().
+		SetApiKey(apikey).
+		SetURL(ub.iamURL).
+		Build()
+	if err != nil {
+		panic(err)
 	}
 }
 

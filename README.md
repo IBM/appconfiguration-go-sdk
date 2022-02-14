@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.2.3
+# IBM Cloud App Configuration Go server SDK 0.2.4
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
