@@ -28,7 +28,7 @@ import (
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"path"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -92,7 +92,7 @@ func (ch *ConfigurationHandler) loadData() {
 		log.Error(messages.ConfigurationHandlerInitError)
 	}
 	if len(ch.persistentCacheDirectory) > 0 {
-		ch.persistentData = utils.ReadFiles(path.Join(ch.persistentCacheDirectory, constants.ConfigurationFile))
+		ch.persistentData = utils.ReadFiles(filepath.Join(utils.SanitizePath(ch.persistentCacheDirectory), constants.ConfigurationFile))
 		if !bytes.Equal(ch.persistentData, []byte(`{}`)) {
 			// no updating the listener here. Only updating cache is enough
 			ch.saveInCache(ch.persistentData)
@@ -102,7 +102,7 @@ func (ch *ConfigurationHandler) loadData() {
 		log.Debug(messages.BootstrapFileProvided)
 		if len(ch.persistentCacheDirectory) > 0 {
 			if bytes.Equal(ch.persistentData, []byte(`{}`)) {
-				bootstrapFileData := utils.ReadFiles(ch.bootstrapFile)
+				bootstrapFileData := utils.ReadFiles(utils.SanitizePath(ch.bootstrapFile))
 				go utils.StoreFiles(string(bootstrapFileData), ch.persistentCacheDirectory)
 				ch.updateCacheAndListener(bootstrapFileData)
 			} else {
@@ -112,7 +112,7 @@ func (ch *ConfigurationHandler) loadData() {
 				}
 			}
 		} else {
-			bootstrapFileData := utils.ReadFiles(ch.bootstrapFile)
+			bootstrapFileData := utils.ReadFiles(utils.SanitizePath(ch.bootstrapFile))
 			ch.updateCacheAndListener(bootstrapFileData)
 		}
 	}

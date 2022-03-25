@@ -20,25 +20,34 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestFileManager(t *testing.T) {
 
 	mockLogger()
+	assert.Equal(t, SanitizePath(""), "/")
+	assert.Equal(t, SanitizePath("Users/home/Desktop"), "/Users/home/Desktop")
+	assert.Equal(t, SanitizePath("/Users/home/Desktop"), "/Users/home/Desktop")
+	assert.Equal(t, SanitizePath("./Users/home/Desktop"), "/Users/home/Desktop")
+	assert.Equal(t, SanitizePath("../../../etc/abc.conf"), "/etc/abc.conf")
+	assert.Equal(t, SanitizePath("////../../Users/home/Desktop"), "/Users/home/Desktop")
+	assert.Equal(t, SanitizePath("./Users/home/Desktop/abc/../abc1"), "/Users/home/Desktop/abc1")
 
 	// TestStoreFilesWithValidJSONContent
-	StoreFiles(`{"key":"value"}`, "")
+	dir, _ := os.Getwd()
+	StoreFiles(`{"key":"value"}`, dir)
 	assert.EqualValues(t,
-		string(ReadFiles(constants.ConfigurationFile)), "{\n\t\"key\": \"value\"\n}")
+		string(ReadFiles(filepath.Join(SanitizePath(dir), constants.ConfigurationFile))), "{\n\t\"key\": \"value\"\n}")
 	os.Remove(constants.ConfigurationFile)
 
 	// TestStoreFilesWithInvalidJSONContent
-	StoreFiles("", "")
+	StoreFiles("", dir)
 	if hook.LastEntry().Message != "AppConfiguration - Error while encoding json json: error calling MarshalJSON for type json.RawMessage: unexpected end of JSON input" {
 		t.Errorf("Test failed: StoreFiles for Invalid json")
 	}
 
 	// TestReadFilesWithNonExistingFile
-	assert.Equal(t, ReadFiles("non-existing-file.txt"), []byte(`{}`))
+	assert.Equal(t, ReadFiles(SanitizePath("non-existing-file.txt")), []byte(`{}`))
 }

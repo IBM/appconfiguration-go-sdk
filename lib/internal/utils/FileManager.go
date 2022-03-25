@@ -23,13 +23,23 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"io/ioutil"
 	"path"
+	"path/filepath"
+	"strings"
 	"sync"
 )
 
 var fileMutex sync.Mutex
 
+// SanitizePath : Sanitises the string path and restrict users from providing manipulated path
+// Example :
+//		input: ../../../etc/abc.conf
+//		output: /etc/abc.conf
+func SanitizePath(_path string) string {
+	return filepath.FromSlash(path.Clean("/" + strings.Trim(_path, "/")))
+}
+
 // StoreFiles : Store Files
-func StoreFiles(content, filePath string) {
+func StoreFiles(content, basePath string) {
 	fileMutex.Lock()
 	defer fileMutex.Unlock()
 
@@ -40,7 +50,8 @@ func StoreFiles(content, filePath string) {
 		log.Error(messages.EncodeJSONErr, err)
 		return
 	}
-	err = ioutil.WriteFile(path.Join(filePath, constants.ConfigurationFile), file, 0644)
+	sanitizedFilePath := filepath.Join(SanitizePath(basePath), constants.ConfigurationFile)
+	err = ioutil.WriteFile(sanitizedFilePath, file, 0644)
 	if err != nil {
 		log.Error(messages.WriteFileErr, err)
 		return
