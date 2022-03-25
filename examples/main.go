@@ -3,10 +3,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
+	"os"
 
 	AppConfiguration "github.com/IBM/appconfiguration-go-sdk/lib"
 )
@@ -16,16 +17,26 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		panic(err)
+	}
+	region := os.Getenv("REGION")
+	guid := os.Getenv("GUID")
+	apikey := os.Getenv("APIKEY")
+	collectionId := os.Getenv("COLLECTION_ID")
+	environmentId := os.Getenv("ENVIRONMENT_ID")
+
 	appConfiguration := AppConfiguration.GetInstance()
-	appConfiguration.Init(AppConfiguration.REGION_US_SOUTH, "<guid>", "<apikey>")
-	appConfiguration.SetContext("<collectionId>", "<environmentId>")
+	appConfiguration.Init(region, guid, apikey)
+	appConfiguration.SetContext(collectionId, environmentId)
 	entityID := "user123"
 	entityAttributes := make(map[string]interface{})
 	entityAttributes["city"] = "Bangalore"
 	entityAttributes["radius"] = 60
 
 	fmt.Println("\n\nFEATURE FLAG OPERATIONS\n")
-	feature, err := appConfiguration.GetFeature("<featureId>")
+	feature, err := appConfiguration.GetFeature(os.Getenv("FEATURE_ID"))
 	if err == nil {
 		fmt.Println("Feature Name:", feature.GetFeatureName())
 		fmt.Println("Feature Id:", feature.GetFeatureID())
@@ -35,7 +46,7 @@ func main() {
 	}
 
 	fmt.Println("\n\nPROPERTY OPERATIONS\n")
-	property, err := appConfiguration.GetProperty("<propertyId>")
+	property, err := appConfiguration.GetProperty(os.Getenv("PROPERTY_ID"))
 	if err == nil {
 		fmt.Println("Property Name:", property.GetPropertyName())
 		fmt.Println("Property Id:", property.GetPropertyID())
@@ -46,6 +57,10 @@ func main() {
 	//So, to keep track of live changes to configurations use this listener.
 	appConfiguration.RegisterConfigurationUpdateListener(func() {
 		fmt.Println("configurations updated")
+		// To find the effect of any configuration changes, you should call the feature or property related methods again
+
+		// feature, err := appConfigClient.GetFeature("feature-id")
+		// newValue := feature.GetCurrentValue(entityID, entityAttributes)
 	})
 
 	myRouter := mux.NewRouter().StrictSlash(true)

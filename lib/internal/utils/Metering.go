@@ -274,7 +274,7 @@ func (mt *Metering) sendMetering() {
 func (mt *Metering) sendSplitMetering(guid string, collectionUsages CollectionUsages, count int) {
 	var lim int = 0
 	subUsages := collectionUsages.Usages
-	for lim <= count {
+	for lim < count {
 		var endIndex int
 		if lim+constants.DefaultUsageLimit >= count {
 			endIndex = count
@@ -310,10 +310,22 @@ func (mt *Metering) sendToServer(guid string, collectionUsages CollectionUsages)
 		return
 	}
 	response := GetAPIManagerInstance().Request(builder)
-	if response != nil && response.StatusCode >= 200 && response.StatusCode <= 299 {
+	if response != nil && response.StatusCode == constants.StatusCodePOST {
 		log.Debug(messages.SendMeteringSuccess)
 	} else {
-		log.Error(messages.SendMeteringServerErr, err)
-		return
+		// [first] Log the accurate reason
+		if response != nil {
+			log.Error(messages.SendMeteringServerErr, response.Result)
+		} else {
+			log.Error(messages.SendMeteringServerErr)
+		}
+		// [then] schedule a function to send the same payload after 10 minutes
+		if response.StatusCode == constants.StatusCodeTooManyRequests || (response.StatusCode >= constants.StatusCodeServerErrorBegin && response.StatusCode <= constants.StatusCodeServerErrorEnd) {
+			minutes, _ := time.ParseDuration(SendInterval)
+			time.AfterFunc(time.Second*time.Duration(minutes.Seconds()), func() {
+				mt.sendToServer(guid, collectionUsages)
+			})
+		}
+
 	}
 }

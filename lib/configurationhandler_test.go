@@ -90,7 +90,7 @@ func TestFetchApi(t *testing.T) {
 		}))
 
 	ch := GetConfigurationHandlerInstance()
-	ch.urlBuilder.Init("collectionID", "environmentID", "region", "guid", "apikey", ts.URL)
+	ch.urlBuilder.SetBaseServiceURL(ts.URL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.liveConfigUpdateEnabled = true
 	ch.fetchFromAPI()
@@ -111,7 +111,7 @@ func TestFetchApi(t *testing.T) {
 		}))
 
 	ch = GetConfigurationHandlerInstance()
-	ch.urlBuilder.Init("collectionID", "environmentID", "region", "guid", "apikey", ts.URL)
+	ch.urlBuilder.SetBaseServiceURL(ts.URL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.liveConfigUpdateEnabled = true
 	ch.fetchFromAPI()
@@ -230,7 +230,7 @@ func TestStartWebSocket(t *testing.T) {
 
 	ch.urlBuilder = utils.GetInstance()
 
-	ch.urlBuilder.Init("collectionID", "environmentID", "region", "guid", "apikey", server2.URL)
+	ch.urlBuilder.SetBaseServiceURL(server2.URL)
 	ch.urlBuilder.SetWebSocketURL(webSocketURL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.guid = "guid"

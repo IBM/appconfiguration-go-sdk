@@ -17,6 +17,7 @@
 package utils
 
 import (
+	"github.com/IBM/go-sdk-core/v5/core"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,19 +27,19 @@ func TestURLBuilder(t *testing.T) {
 
 	// test when override server host is provided
 	urlBuilder := GetInstance()
-	urlBuilder.Init("CollectionID", "EnvironmentID", "region", "guid", "apikey", "overrideServerHost")
+	urlBuilder.SetWebSocketURL("wss://overrideServerHost/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID")
 	assert.Equal(t, "wss://overrideServerHost/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID", urlBuilder.GetWebSocketURL())
 	resetURLBuilderInstance()
 
 	// test when override server host is not provided
 	urlBuilder = GetInstance()
-	urlBuilder.Init("CollectionID", "EnvironmentID", "region", "guid", "apikey", "")
+	urlBuilder.SetBaseServiceURL("https://region.apprapp.cloud.ibm.com")
 	assert.Equal(t, "https://region.apprapp.cloud.ibm.com", urlBuilder.GetBaseServiceURL())
 	resetURLBuilderInstance()
 
 	// test when get token encounters an error while retrieving token and returns an token of size 0
 	urlBuilder = GetInstance()
-	urlBuilder.Init("CollectionID", "EnvironmentID", "region", "guid", "apikey", "")
+	urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	token := urlBuilder.GetToken()
 	assert.Equal(t, 0, len(token))
 	resetURLBuilderInstance()

@@ -234,3 +234,15 @@ const TypeCastingError = "Error Type casting. Check the feature or property valu
 
 // ContextOptionsParameterDeprecation = Deprecation message
 const ContextOptionsParameterDeprecation = "Deprecated: With v0.2.1 the existing method of passing ConfigurationFile will be deprecated & removed from v0.3.0 \nUse BootstrapFile parameter instead."
+
+// FetchAPISuccessful : FetchAPISuccessful const
+const FetchAPISuccessful = "Successfully fetched the configurations."
+
+// WebSocketConnectFailed : WebSocketConnectFailed const
+const WebSocketConnectFailed = "Socket connect failed. "
+
+// AuthTokenError : AuthTokenError const
+const AuthTokenError = "Invalid API Key is provided. Could not generate Bearer token for the provided API Key."
+
+// RetryScheduledMessage : RetryScheduledMessage const
+const RetryScheduledMessage = "Scheduled the API request to retry after 10 minutes."

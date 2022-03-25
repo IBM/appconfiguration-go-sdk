@@ -51,7 +51,6 @@ type ConfigurationHandler struct {
 	bootstrapFile               string
 	liveConfigUpdateEnabled     bool
 	persistentData              []byte
-	retryCount                  int
 	retryInterval               int64
 	socketConnection            *websocket.Conn
 	socketConnectionResponse    *http.Response
@@ -86,7 +85,6 @@ func (ch *ConfigurationHandler) SetContext(collectionID, environmentID string, o
 	ch.bootstrapFile = options.BootstrapFile
 	ch.liveConfigUpdateEnabled = options.LiveConfigUpdateEnabled
 	ch.isInitialized = true
-	ch.retryCount = 3
 	ch.retryInterval = 600
 }
 func (ch *ConfigurationHandler) loadData() {
@@ -167,7 +165,6 @@ func (ch *ConfigurationHandler) updateCacheAndListener(data []byte) {
 }
 func (ch *ConfigurationHandler) fetchFromAPI() {
 	if ch.isInitialized {
-		ch.retryCount--
 		builder := core.NewRequestBuilder(core.GET)
 		builder.AddQuery("environment_id", ch.environmentID)
 		pathParamsMap := map[string]string{
@@ -180,34 +177,48 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		}
 		builder.AddHeader("Accept", "application/json")
 		builder.AddHeader("User-Agent", constants.UserAgent)
+
+		// 2xx - Do not retry (Success)
+		// 3xx - Do not retry (Redirect)
+		// 4xx - Do not retry (Client errors)
+		// 429 - Retry ("Too Many Requests")
+		// 5xx - Retry (Server errors)
+
+		// The Request() below is itself an retryableRequest. Hence, we don't need to write the retry logic again.
+		//
+		// The API call gets retried within Request() for 3 times in an exponential interval(0.5s, 1s, 1.5s) between each retry.
+		// If all the 3 retries fails, the call is returned and execution is given back to us to take the response object ahead.
+		//
+		// For 429 error code - The Request() will retry the request 3 times in an interval of time mentioned in ["Retry-after"] header.
+		// If all the 3 retries exhausts the call is returned and execution is given back to us to take the response object ahead.
+		//
+		// Both the cases [429 & 5xx] we schedule a retry after 10 minutes.
+
 		response := utils.GetAPIManagerInstance().Request(builder)
-		if response != nil && response.StatusCode >= 200 && response.StatusCode <= 299 {
-			if ch.liveConfigUpdateEnabled {
-				jsonData, _ := json.Marshal(response.Result)
-				// asynchronously write the response to persistent volume, if enabled
-				if len(ch.persistentCacheDirectory) > 0 {
-					go utils.StoreFiles(string(jsonData), ch.persistentCacheDirectory)
-				}
-				// load the configurations in the response to cache maps
-				ch.updateCacheAndListener(jsonData)
+		if response != nil && response.StatusCode == constants.StatusCodeGET {
+			log.Debug(messages.FetchAPISuccessful)
+			jsonData, _ := json.Marshal(response.Result)
+			// asynchronously write the response to persistent volume, if enabled
+			if len(ch.persistentCacheDirectory) > 0 {
+				go utils.StoreFiles(string(jsonData), ch.persistentCacheDirectory)
 			}
+			// load the configurations in the response to cache maps
+			ch.updateCacheAndListener(jsonData)
 		} else {
-			if ch.retryCount > 0 {
-				if response != nil {
-					if response.Result != nil {
-						log.Error(response.Result)
-					} else {
-						log.Error(string(response.RawResult))
-					}
+			if response != nil {
+				if response.Result != nil {
+					log.Error(response.Result)
 				} else {
-					log.Error(messages.ConfigAPIError)
+					log.Error(string(response.RawResult))
 				}
-				ch.fetchFromAPI()
+				if response.StatusCode == constants.StatusCodeTooManyRequests || (response.StatusCode >= constants.StatusCodeServerErrorBegin && response.StatusCode <= constants.StatusCodeServerErrorEnd) {
+					time.AfterFunc(time.Second*time.Duration(ch.retryInterval), func() {
+						ch.fetchFromAPI()
+					})
+					log.Info(messages.RetryScheduledMessage)
+				}
 			} else {
-				ch.retryCount = 3
-				time.AfterFunc(time.Second*time.Duration(ch.retryInterval), func() {
-					ch.fetchFromAPI()
-				})
+				log.Error(messages.ConfigAPIError)
 			}
 		}
 	} else {
@@ -218,7 +229,12 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 func (ch *ConfigurationHandler) startWebSocket() {
 	defer utils.GracefullyHandleError()
 	log.Debug(messages.StartWebSocket)
-	h := http.Header{"Authorization": []string{ch.urlBuilder.GetToken()}}
+	authToken := ch.urlBuilder.GetToken()
+	if len(authToken) == 0 {
+		log.Error(messages.WebSocketConnectFailed, messages.AuthTokenError)
+		return
+	}
+	h := http.Header{"Authorization": []string{authToken}}
 	var err error
 	if ch.socketConnection != nil {
 		ch.socketConnection.Close()
