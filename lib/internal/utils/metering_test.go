@@ -215,7 +215,7 @@ func TestSendToServer(t *testing.T) {
 	ts := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-type", "application/json")
-			w.WriteHeader(200)
+			w.WriteHeader(202)
 			fmt.Fprintf(w, "%s", `Success`)
 		}))
 

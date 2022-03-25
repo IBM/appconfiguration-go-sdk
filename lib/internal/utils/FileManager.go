@@ -23,10 +23,16 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"io/ioutil"
 	"path"
+	"sync"
 )
+
+var fileMutex sync.Mutex
 
 // StoreFiles : Store Files
 func StoreFiles(content, filePath string) {
+	fileMutex.Lock()
+	defer fileMutex.Unlock()
+
 	log.Debug(messages.StoreFile)
 
 	file, err := json.MarshalIndent(json.RawMessage(content), "", "\t")
@@ -43,6 +49,9 @@ func StoreFiles(content, filePath string) {
 
 // ReadFiles reads file from the file path
 func ReadFiles(filePath string) []byte {
+	fileMutex.Lock()
+	defer fileMutex.Unlock()
+
 	log.Debug(messages.ReadFile)
 	file, err := ioutil.ReadFile(filePath)
 	if err != nil {

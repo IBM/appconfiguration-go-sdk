@@ -16,7 +16,7 @@
 
 - Go to dashboard page of App Configuration service instance in the IBM Cloud UI.
 - Navigate to Service Credentials section and generate a new set of credentials. Provide these generated `region`
-  , `guid` and `apikey` values in file [`main.go`](main.go#L22)
+  , `guid` and `apikey` values in [environment file](.env).
 
 ## Step 3: Create a collection, segment, feature flag & add targeting to feature flag
 
@@ -37,14 +37,14 @@ Collection ID: car-rentals
 
 Name: Users from Bangalore urban area
 Add rule one:
-Attribute name: city
-Operator: is
-Values: Bangalore
+            Attribute name: city
+            Operator: is
+            Values: Bangalore
 Add rule two:
-Attribute name: radius
-Operator: less than and equals
-Values: 60
-
+            Attribute name: radius
+            Operator: less than and equals
+            Values: 60
+            
 ```
 
 - Again on the same instance, navigate to Feature flags section and create a feature flag by clicking on create button.
@@ -67,7 +67,7 @@ Add this feature flag to the above collection created "Car Rentals"
 
 Name: User location
 Property ID: user-location
-Property type: String
+Property type & format: String & Text
 Default value: other
 Add this property to the above collection created "Car Rentals"
 ```
@@ -76,20 +76,17 @@ Add this property to the above collection created "Car Rentals"
 
 ```
 Select the segment "Users from Bangalore urban area" from the dropdown.
-Choose Override enabled value, and give some value(say 25) in the textarea.
-Click Save rule & Add the targeting.
+Click on radio button "Override" in the Enabled value section, and give some value(say 25) in the below numeric input.
+Next, click on "Save rule" & and then click on "Add targeting". This applies the targeting to the feature flag.
 ```
 
 - Click `Add targeting` on the property created & target this property to the segment.
 
 ```
 Select the segment "Users from Bangalore urban area" from the dropdown.
-Choose Override enabled value, and give the value(say "Bangalore") in the textarea.
-Click Save rule & Add the targeting.
+Click on radio button "Override" in the Property value section, and give the value(say "Bangalore") in the below text input.
+Next, click on "Save rule" & and then click on "Add targeting". This applies the targeting to the property.
 ```
-- Use the `id` of default environment created on instance creation.
-
-- In the example app, provide the collectionId, environmentId, featureId & propertyId in file [`main.go`](main.go#L23)
 
 ## Step 4: Run the app
 

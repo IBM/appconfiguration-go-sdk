@@ -17,10 +17,9 @@
 package utils
 
 import (
+	"github.com/IBM/go-sdk-core/v5/core"
 	"net/http"
 	"regexp"
-
-	"github.com/IBM/go-sdk-core/v5/core"
 )
 
 // URLBuilder : URLBuilder struct
@@ -89,6 +88,11 @@ func (ub *URLBuilder) Init(collectionID string, environmentID string, region str
 // GetBaseServiceURL returns base service url
 func (ub *URLBuilder) GetBaseServiceURL() string {
 	return ub.httpBase
+}
+
+// SetBaseServiceURL overrides the base service url if set
+func (ub *URLBuilder) SetBaseServiceURL(url string) {
+	ub.httpBase = url
 }
 
 // GetAuthenticator returns iam authenticator

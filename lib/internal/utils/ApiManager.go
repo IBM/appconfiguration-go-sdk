@@ -18,8 +18,10 @@ package utils
 
 import (
 	"encoding/json"
+	cons "github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	"github.com/IBM/go-sdk-core/v5/core"
 	"sync"
+	"time"
 )
 
 // APIManager : wrapper struct over core base service.
@@ -40,6 +42,7 @@ func GetAPIManagerInstance() *APIManager {
 			Authenticator: urlBuilderInstance.GetAuthenticator(),
 		}
 		apiManagerInstance.baseService, _ = core.NewBaseService(apiManagerInstance.serviceOptions)
+		apiManagerInstance.baseService.EnableRetries(cons.MaxNumberOfRetries, time.Second*time.Duration(cons.MaxRetryInterval))
 	})
 	return apiManagerInstance
 }

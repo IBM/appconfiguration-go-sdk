@@ -23,10 +23,31 @@ const DefaultSegmentID = "$$null$$"
 const DefaultEntityID = "$$null$$"
 
 // DefaultUsageLimit : Default Usage Limit
-const DefaultUsageLimit = 25
+const DefaultUsageLimit = 10
 
 // UserAgent specifies the user agent name
-const UserAgent = "appconfiguration-go-sdk/0.2.4"
+const UserAgent = "appconfiguration-go-sdk/0.2.5"
 
 // ConfigurationFile : Name of file to which configurations will be written
 const ConfigurationFile = "appconfiguration.json"
+
+// MaxNumberOfRetries : Maximum number of retries
+const MaxNumberOfRetries = 3
+
+// MaxRetryInterval : Maximum duration between successive retries (in seconds)
+const MaxRetryInterval = 30
+
+// StatusCodeGET : Http status code for successful GET call
+const StatusCodeGET = 200
+
+// StatusCodePOST : Http status code for successful POST call
+const StatusCodePOST = 202
+
+// StatusCodeTooManyRequests : Http status code for API call exceeding rate limit
+const StatusCodeTooManyRequests = 429
+
+// StatusCodeServerErrorBegin : Beginning status code for server errors
+const StatusCodeServerErrorBegin = 500
+
+// StatusCodeServerErrorEnd : End status code for server errors
+const StatusCodeServerErrorEnd = 599
