@@ -28,14 +28,15 @@ import (
 
 // Feature : Feature struct
 type Feature struct {
-	Name          string        `json:"name"`
-	FeatureID     string        `json:"feature_id"`
-	DataType      string        `json:"type"`
-	Format        string        `json:"format"`
-	EnabledValue  interface{}   `json:"enabled_value"`
-	DisabledValue interface{}   `json:"disabled_value"`
-	SegmentRules  []SegmentRule `json:"segment_rules"`
-	Enabled       bool          `json:"enabled"`
+	Name              string        `json:"name"`
+	FeatureID         string        `json:"feature_id"`
+	DataType          string        `json:"type"`
+	Format            string        `json:"format"`
+	EnabledValue      interface{}   `json:"enabled_value"`
+	DisabledValue     interface{}   `json:"disabled_value"`
+	SegmentRules      []SegmentRule `json:"segment_rules"`
+	Enabled           bool          `json:"enabled"`
+	RolloutPercentage *int          `json:"rollout_percentage"`
 }
 
 // GetFeatureName : Get Feature Name
@@ -79,12 +80,13 @@ func (f *Feature) GetFeatureDataFormat() string {
 	return f.Format
 }
 
-// IsEnabled : Is Enabled
-func (f *Feature) IsEnabled() bool {
-	defer func() {
-		utils.GetMeteringInstance().RecordEvaluation(f.GetFeatureID(), "", constants.DefaultEntityID, constants.DefaultSegmentID)
-	}()
-	return f.Enabled
+// GetRolloutPercentage : Get the Feature flag rollout percentage
+func (f *Feature) GetRolloutPercentage() int {
+	if f.RolloutPercentage == nil {
+		var v int = 100
+		f.RolloutPercentage = &v
+	}
+	return *f.RolloutPercentage
 }
 
 // GetSegmentRules : Get Segment Rules
@@ -92,16 +94,42 @@ func (f *Feature) GetSegmentRules() []SegmentRule {
 	return f.SegmentRules
 }
 
-// GetCurrentValue : Get Current Value
-func (f *Feature) GetCurrentValue(entityID string, entityAttributes map[string]interface{}) interface{} {
+// IsEnabled returns the state of the feature flag.
+// Returns true, if the feature flag is enabled, otherwise returns false.
+func (f *Feature) IsEnabled() bool {
+	return f.Enabled
+}
+
+// GetCurrentValue returns one of the Enabled/Disabled/Overridden value based on the evaluation.
+//
+// The function takes in entityId & entityAttributes parameters.
+//
+// entityId is a string identifier related to the Entity against which the feature will be evaluated.
+// For example, an entity might be an instance of an app that runs on a mobile device, a microservice that runs on the cloud, or a component of infrastructure that runs that microservice.
+// For any entity to interact with App Configuration, it must provide a unique entity ID.
+//
+// entityAttributes is a map of type `map[string]interface{}` consisting of the attribute name and their values that defines the specified entity.
+// This is an optional parameter if the feature flag is not configured with any targeting definition.
+// If the targeting is configured, then entityAttributes should be provided for the rule evaluation.
+// An attribute is a parameter that is used to define a segment. The SDK uses the attribute values to determine if the
+// specified entity satisfies the targeting rules, and returns the appropriate feature flag value.
+func (f *Feature) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) interface{} {
 	log.Debug(messages.RetrievingFeature)
 	if len(entityID) <= 0 {
-		log.Error(messages.SetEntityObjectIDError)
+		log.Error("Feature flag evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil
 	}
-
+	var temp map[string]interface{}
+	switch len(entityAttributes) {
+	case 0: // Do Nothing
+	case 1:
+		temp = entityAttributes[0]
+	default:
+		log.Error("Feature flag evaluation: ", messages.IncorrectUsageOfEntityAttributes, "GetCurrentValue")
+		return nil
+	}
 	if f.isFeatureValid() {
-		val := f.featureEvaluation(entityID, entityAttributes)
+		val, _ := f.featureEvaluation(entityID, temp)
 		return getTypeCastedValue(val, f.GetFeatureDataType(), f.GetFeatureDataFormat())
 	}
 	return nil
@@ -110,7 +138,7 @@ func (f *Feature) GetCurrentValue(entityID string, entityAttributes map[string]i
 func (f *Feature) isFeatureValid() bool {
 	return !(f.Name == "" || f.FeatureID == "" || f.DataType == "" || f.EnabledValue == nil || f.DisabledValue == nil)
 }
-func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string]interface{}) interface{} {
+func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string]interface{}) (interface{}, bool) {
 
 	var evaluatedSegmentID string = constants.DefaultSegmentID
 	defer func() {
@@ -121,18 +149,11 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 		log.Debug(messages.EvaluatingFeature)
 		defer utils.GracefullyHandleError()
 
-		if len(entityAttributes) < 0 {
-			log.Debug(f.GetEnabledValue())
-			return f.GetEnabledValue()
-		}
-
-		if len(f.GetSegmentRules()) > 0 {
-
+		if len(f.GetSegmentRules()) > 0 && len(entityAttributes) > 0 {
 			var rulesMap map[int]SegmentRule
 			rulesMap = f.parseRules(f.GetSegmentRules())
 
 			// sort the map elements as per ascending order of keys
-
 			var keys []int
 			for k := range rulesMap {
 				keys = append(keys, k)
@@ -146,24 +167,32 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 					for _, segmentKey := range rule.Segments {
 						if f.evaluateSegment(string(segmentKey), entityAttributes) {
 							evaluatedSegmentID = segmentKey
-							if segmentRule.GetValue() == "$default" {
-								log.Debug(messages.FeatureValue)
-								log.Debug(f.GetEnabledValue())
-								return f.GetEnabledValue()
+							var segmentLevelRolloutPercentage int
+							if segmentRule.GetRolloutPercentage() == "$default" {
+								segmentLevelRolloutPercentage = f.GetRolloutPercentage()
+							} else {
+								segmentLevelRolloutPercentage = int(segmentRule.GetRolloutPercentage().(float64))
 							}
-							log.Debug(messages.FeatureValue)
-							log.Debug(segmentRule.GetValue())
-							return segmentRule.GetValue()
+							if segmentLevelRolloutPercentage == 100 || utils.GetNormalizedValue(entityID+":"+f.GetFeatureID()) < segmentLevelRolloutPercentage {
+								if segmentRule.GetValue() == "$default" {
+									return f.GetEnabledValue(), true
+								} else {
+									return segmentRule.GetValue(), true
+								}
+							} else {
+								return f.GetDisabledValue(), false
+							}
 						}
 					}
 				}
 			}
-		} else {
-			return f.GetEnabledValue()
 		}
-		return f.GetEnabledValue()
+		if f.GetRolloutPercentage() == 100 || utils.GetNormalizedValue(entityID+":"+f.GetFeatureID()) < f.GetRolloutPercentage() {
+			return f.GetEnabledValue(), true
+		}
+		return f.GetDisabledValue(), false
 	}
-	return f.GetDisabledValue()
+	return f.GetDisabledValue(), false
 }
 func (f *Feature) parseRules(segmentRules []SegmentRule) map[int]SegmentRule {
 	log.Debug(messages.ParsingFeatureRules)

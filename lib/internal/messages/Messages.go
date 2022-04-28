@@ -43,6 +43,9 @@ const BootstrapFileNotFoundError = "Provide bootstrap_file value when live_confi
 // IncorrectUsageOfContextOptions : IncorrectUsageOfContextOptions const
 const IncorrectUsageOfContextOptions = "Incorrect usage of context options. At most of one ContextOptions struct should be passed."
 
+// IncorrectUsageOfEntityAttributes : IncorrectUsageOfEntityAttributes const
+const IncorrectUsageOfEntityAttributes = "Incorrect usage of entityAttributes in "
+
 // ConfigAPIError : ConfigAPIError const
 const ConfigAPIError = "Failed to fetch the configurations"
 
@@ -58,8 +61,8 @@ const WebsocketReceivingMessage = "Message received from socket."
 // ConfigurationUpdateListenerMethodError : ConfigurationUpdateListenerMethodError const
 const ConfigurationUpdateListenerMethodError = "Configuration update listener should me a method or a function."
 
-// SetEntityObjectIDError : SetEntityObjectIDError const
-const SetEntityObjectIDError = "Provide entity Id as a first param to GetCurrentValue."
+// InvalidEntityId : InvalidEntityId const
+const InvalidEntityId = "Invalid entityId passed to "
 
 // ConfigurationHandlerInitError : ConfigurationHandlerInitError const
 const ConfigurationHandlerInitError = "Invalid action in ConfigurationHandler. You can perform this action only after a successful initialization. Check the initialization section for errors."
@@ -233,7 +236,7 @@ const InvalidDataFormat = "Invalid data format"
 const TypeCastingError = "Error Type casting. Check the feature or property values."
 
 // ContextOptionsParameterDeprecation = Deprecation message
-const ContextOptionsParameterDeprecation = "Deprecated: With v0.2.1 the existing method of passing ConfigurationFile will be deprecated & removed from v0.3.0 \nUse BootstrapFile parameter instead."
+const ContextOptionsParameterDeprecation = "Deprecated: With v0.2.1 onwards, the ConfigurationFile parameter of SetContext method has been deprecated.\nUse BootstrapFile parameter instead."
 
 // FetchAPISuccessful : FetchAPISuccessful const
 const FetchAPISuccessful = "Successfully fetched the configurations."

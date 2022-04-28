@@ -41,7 +41,7 @@ func main() {
 		fmt.Println("Feature Name:", feature.GetFeatureName())
 		fmt.Println("Feature Id:", feature.GetFeatureID())
 		fmt.Println("Feature Data type:", feature.GetFeatureDataType())
-		fmt.Println("Is Feature enabled?", feature.IsEnabled())
+		fmt.Println("Is feature enabled?", feature.IsEnabled())
 		fmt.Println("Feature evaluated value is:", feature.GetCurrentValue(entityID, entityAttributes))
 	}
 
@@ -53,8 +53,8 @@ func main() {
 		fmt.Println("Property Data type:", property.GetPropertyDataType())
 		fmt.Println("Property evaluated value is:", property.GetCurrentValue(entityID, entityAttributes))
 	}
-	//whenever the configurations get changed/updated on the app configuration service instance the function inside this listener is triggered.
-	//So, to keep track of live changes to configurations use this listener.
+	// whenever the configurations get changed/updated on the app configuration service instance the function inside this listener is triggered.
+	// So, to keep track of live changes to configurations use this listener.
 	appConfiguration.RegisterConfigurationUpdateListener(func() {
 		fmt.Println("configurations updated")
 		// To find the effect of any configuration changes, you should call the feature or property related methods again

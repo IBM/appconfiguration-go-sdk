@@ -32,7 +32,7 @@ import (
 // }
 
 func TestInit(t *testing.T) {
-	// test get feature when not initialised properly
+	// test init when not initialised properly
 	mockLogger()
 	ac := GetInstance()
 	ac.Init("", "", "")
@@ -41,7 +41,7 @@ func TestInit(t *testing.T) {
 	}
 	reset(ac)
 
-	// test get feature when initialised properly
+	// test init when initialised properly
 	assert.Nil(t, ac.configurationHandlerInstance)
 	ac.Init("a", "b", "c")
 	assert.NotNil(t, ac.configurationHandlerInstance)
@@ -73,7 +73,7 @@ func TestSetContext(t *testing.T) {
 	}
 	reset(ac)
 
-	// when collection id and environment id is provided successfully. (in-memory cache)
+	// when only collection id and environment id is provided (in-memory cache)
 	//ac.Init("a", "b", "c")
 	//ac.isInitialized = true
 	//assert.Equal(t, false, ac.isInitializedConfig)
@@ -81,7 +81,7 @@ func TestSetContext(t *testing.T) {
 	//assert.Equal(t, true, ac.isInitializedConfig)
 	//reset(ac)
 
-	// when collection id and environment id is provided successfully and the number of context options is more than 1
+	// when collection id and environment id is provided and the number of context options is more than 1
 	ac.Init("a", "b", "c")
 	ac.isInitialized = true
 	ac.SetContext("c1", "dev", ContextOptions{
@@ -96,7 +96,7 @@ func TestSetContext(t *testing.T) {
 	}
 	reset(ac)
 
-	// when collection id and environment id is provided successfully and the number of context options is 1. (Bootstrap file evaluation)
+	// when collection id and environment id is provided and the number of context options is 1. (Bootstrap file evaluation)
 	ac.Init("a", "b", "c")
 	ac.isInitialized = true
 	assert.Equal(t, false, ac.isInitializedConfig)
@@ -107,7 +107,7 @@ func TestSetContext(t *testing.T) {
 	assert.Equal(t, true, ac.isInitializedConfig)
 	reset(ac)
 
-	// when collection id and environment id is provided successfully and the context options has no config file inspite of live update enabled set to false
+	// when collection id and environment id is provided and the context options has no config file inspite of live update enabled set to false
 	ac.Init("a", "b", "c")
 	ac.isInitialized = true
 	assert.Equal(t, false, ac.isInitializedConfig)

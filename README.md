@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.2.5
+# IBM Cloud App Configuration Go server SDK 0.3.0
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -24,9 +24,11 @@ the cloud to activate or deactivate features in your application or environment,
 properties for distributed applications centrally.
 
 ## Prerequisites
+
 - Go version(1.17, 1.16.7) or later is recommended
 
 ## Installation
+
 **Note: The v1.x.x versions of the App Configuration Go SDK have been retracted. Use the latest available version of the SDK.**
 
 There are a few different ways to download and install the IBM App Configuration Go SDK project for use by your Go
@@ -153,15 +155,14 @@ if err == nil {
     fmt.Println("Feature Name", feature.GetFeatureName())
     fmt.Println("Feature Id", feature.GetFeatureID())
     fmt.Println("Feature Type", feature.GetFeatureDataType())
-    fmt.Println("Feature is enabled", feature.IsEnabled())
+    fmt.Println("Is feature enabled?", feature.IsEnabled())
 }
 ```
 
 ## Evaluate a feature
 
-You can use the ` feature.GetCurrentValue(entityId, entityAttributes)` method to evaluate the value of the feature
-flag. You should pass an unique entityId as the parameter to perform the feature flag evaluation. If the feature flag
-is configured with segments in the App Configuration service, you can set the attributes values as a map.
+Use the `feature.GetCurrentValue(entityId, entityAttributes)` method to evaluate the value of the feature flag.
+GetCurrentValue returns one of the Enabled/Disabled/Overridden value based on the evaluation.
 
 ```go
 entityId := "john_doe"
@@ -171,6 +172,17 @@ entityAttributes["country"] = "India"
 
 featureVal := feature.GetCurrentValue(entityId, entityAttributes)
 ```
+
+* entityId: entityId is a string identifier related to the Entity against which the feature will be evaluated. For
+  example, an entity might be an instance of an app that runs on a mobile device, a microservice that runs on the cloud,
+  or a component of infrastructure that runs that microservice. For any entity to interact with App Configuration, it
+  must provide a unique entity ID.
+
+* entityAttributes: entityAttributes is a map of type `map[string]interface{}` consisting of the attribute name and
+  their values that defines the specified entity. This is an optional parameter if the feature flag is not configured
+  with any targeting definition. If the targeting is configured, then entityAttributes should be provided for the rule
+  evaluation. An attribute is a parameter that is used to define a segment. The SDK uses the attribute values to
+  determine if the specified entity satisfies the targeting rules, and returns the appropriate feature flag value.
 
 ## Get single property
 
@@ -198,9 +210,8 @@ if err == nil {
 
 ## Evaluate a property
 
-You can use the ` property.GetCurrentValue(entityId, entityAttributes)` method to evaluate the value of the
-property. You should pass an unique entityId as the parameter to perform the property evaluation. If the property is
-configured with segments in the App Configuration service, you can set the attributes values as a map.
+Use the `property.GetCurrentValue(entityId, entityAttributes)` method to evaluate the value of the property.
+GetCurrentValue returns the default property value or its overridden value based on the evaluation.
 
 ```go
 entityId := "john_doe"
@@ -210,6 +221,16 @@ entityAttributes["country"] = "India"
 
 propertyVal := property.GetCurrentValue(entityId, entityAttributes)
 ```
+
+* entityId: entityId is a string identifier related to the Entity against which the property will be evaluated. For
+  example, an entity might be an instance of an app that runs on a mobile device, a microservice that runs on the cloud,
+  or a component of infrastructure that runs that microservice. For any entity to interact with App Configuration, it
+  must provide a unique entity ID.
+* entityAttributes: entityAttributes is a map of type `map[string]interface{}` consisting of the attribute name and
+  their values that defines the specified entity. This is an optional parameter if the property is not configured with
+  any targeting definition. If the targeting is configured, then entityAttributes should be provided for the rule
+  evaluation. An attribute is a parameter that is used to define a segment. The SDK uses the attribute values to
+  determine if the specified entity satisfies the targeting rules, and returns the appropriate property value.
 
 ## Fetching the appConfigClient across other modules
 
