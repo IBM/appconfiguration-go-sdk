@@ -25,11 +25,11 @@ import (
 // URLBuilder : URLBuilder struct
 type URLBuilder struct {
 	baseURL       string
-	wsURL         string
+	wsPath        string
 	path          string
 	service       string
 	httpBase      string
-	webSocketBase string
+	webSocketURL  string
 	events        string
 	region        string
 	guid          string
@@ -43,37 +43,34 @@ var urlBuilderInstance *URLBuilder
 func GetInstance() *URLBuilder {
 	if urlBuilderInstance == nil {
 		urlBuilderInstance = &URLBuilder{
-			baseURL:       ".apprapp.cloud.ibm.com",
-			wsURL:         "/wsfeature",
-			path:          "/feature/v1/instances/",
-			service:       "/apprapp",
-			httpBase:      "https://",
-			webSocketBase: "wss://",
-			events:        "/events/v1/instances/",
-			region:        "",
-			guid:          "",
-			iamURL:        "https://iam.cloud.ibm.com",
+			baseURL:      ".apprapp.cloud.ibm.com",
+			wsPath:       "/wsfeature",
+			path:         "/feature/v1/instances/",
+			service:      "/apprapp",
+			httpBase:     "",
+			webSocketURL: "",
+			events:       "/events/v1/instances/",
+			region:       "",
+			guid:         "",
+			iamURL:       "https://iam.cloud.ibm.com",
 		}
 	}
 	return urlBuilderInstance
 }
 
 // Init : Init
-func (ub *URLBuilder) Init(collectionID string, environmentID string, region string, guid string, apikey string, overrideServerHost string) {
+func (ub *URLBuilder) Init(collectionID string, environmentID string, region string, guid string, apikey string, overrideServiceUrl string) {
 	ub.region = region
 	ub.guid = guid
-	if len(overrideServerHost) > 0 {
-		ub.httpBase = overrideServerHost
+	if len(overrideServiceUrl) > 0 {
+		ub.httpBase = overrideServiceUrl
 		ub.iamURL = "https://iam.test.cloud.ibm.com"
 		var compile, _ = regexp.Compile(`http([a-z]*)://`)
-		ub.webSocketBase += compile.ReplaceAllString(overrideServerHost, "")
+		ub.webSocketURL = "wss://" + compile.ReplaceAllString(overrideServiceUrl, "") + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
 	} else {
-		ub.httpBase += region
-		ub.httpBase += ub.baseURL
-		ub.webSocketBase += region
-		ub.webSocketBase += ub.baseURL
+		ub.httpBase = "https://" + region + ub.baseURL
+		ub.webSocketURL = "wss://" + region + ub.baseURL + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
 	}
-	ub.webSocketBase += ub.service + ub.wsURL + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
 	// Create the authenticator.
 	var err error
 	ub.authenticator, err = core.NewIamAuthenticatorBuilder().
@@ -102,7 +99,7 @@ func (ub *URLBuilder) GetAuthenticator() core.Authenticator {
 
 // GetWebSocketURL returns web socket url
 func (ub *URLBuilder) GetWebSocketURL() string {
-	return ub.webSocketBase
+	return ub.webSocketURL
 }
 
 // GetToken returns the string "Bearer <token>"
@@ -118,7 +115,7 @@ func (ub *URLBuilder) GetToken() string {
 
 // SetWebSocketURL : sets web socket url
 func (ub *URLBuilder) SetWebSocketURL(webSocketURL string) {
-	ub.webSocketBase = webSocketURL
+	ub.webSocketURL = webSocketURL
 }
 
 // SetAuthenticator : assigns an authenticator to the url builder instance authenticator member variable.

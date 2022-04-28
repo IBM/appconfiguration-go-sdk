@@ -23,9 +23,10 @@ type RuleElem struct {
 
 // SegmentRule : SegmentRule struct
 type SegmentRule struct {
-	Rules []RuleElem
-	Value interface{}
-	Order int
+	Rules             []RuleElem
+	Value             interface{}
+	Order             int
+	RolloutPercentage *interface{} `json:"rollout_percentage"`
 }
 
 // GetRules : Get Rules
@@ -41,4 +42,13 @@ func (sr *SegmentRule) GetValue() interface{} {
 // GetOrder : Get Order
 func (sr *SegmentRule) GetOrder() int {
 	return sr.Order
+}
+
+// GetRolloutPercentage : Get the rollout percentage of the segment rule
+func (sr *SegmentRule) GetRolloutPercentage() interface{} {
+	if sr.RolloutPercentage == nil {
+		var v interface{} = 100.0
+		sr.RolloutPercentage = &v
+	}
+	return *sr.RolloutPercentage
 }

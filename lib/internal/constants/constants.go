@@ -26,7 +26,7 @@ const DefaultEntityID = "$$null$$"
 const DefaultUsageLimit = 10
 
 // UserAgent specifies the user agent name
-const UserAgent = "appconfiguration-go-sdk/0.2.5"
+const UserAgent = "appconfiguration-go-sdk/0.3.0"
 
 // ConfigurationFile : Name of file to which configurations will be written
 const ConfigurationFile = "appconfiguration.json"
@@ -37,11 +37,11 @@ const MaxNumberOfRetries = 3
 // MaxRetryInterval : Maximum duration between successive retries (in seconds)
 const MaxRetryInterval = 30
 
-// StatusCodeGET : Http status code for successful GET call
-const StatusCodeGET = 200
+// StatusCodeOK : Http status code for successful GET call
+const StatusCodeOK = 200
 
-// StatusCodePOST : Http status code for successful POST call
-const StatusCodePOST = 202
+// StatusCodeAccepted : Http status code for successful POST call
+const StatusCodeAccepted = 202
 
 // StatusCodeTooManyRequests : Http status code for API call exceeding rate limit
 const StatusCodeTooManyRequests = 429

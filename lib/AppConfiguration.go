@@ -42,8 +42,7 @@ type ContextOptions struct {
 
 var appConfigurationInstance *AppConfiguration
 
-// OverrideServerHost : Override server host
-var OverrideServerHost = ""
+var overrideServiceUrl = ""
 
 // var log = logrus.New()
 
@@ -70,6 +69,17 @@ func GetInstance() *AppConfiguration {
 		appConfigurationInstance = new(AppConfiguration)
 	}
 	return appConfigurationInstance
+}
+
+// OverrideServiceUrl method overrides the default App Configuration URL.
+// This method should be invoked before the SDK initialization.
+//
+// Example: AppConfiguration.OverrideServiceUrl("https://testurl.com")
+//
+// NOTE: To be used for development purposes only.
+//
+func OverrideServiceUrl(url string) {
+	overrideServiceUrl = url
 }
 
 // Init : Init App Configuration Instance

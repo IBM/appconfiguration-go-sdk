@@ -79,7 +79,7 @@ func (ch *ConfigurationHandler) SetContext(collectionID, environmentID string, o
 	ch.collectionID = collectionID
 	ch.environmentID = environmentID
 	ch.urlBuilder = utils.GetInstance()
-	ch.urlBuilder.Init(ch.collectionID, ch.environmentID, ch.region, ch.guid, ch.apikey, OverrideServerHost)
+	ch.urlBuilder.Init(ch.collectionID, ch.environmentID, ch.region, ch.guid, ch.apikey, overrideServiceUrl)
 	utils.GetMeteringInstance().Init(ch.guid, environmentID, collectionID)
 	ch.persistentCacheDirectory = options.PersistentCacheDirectory
 	ch.bootstrapFile = options.BootstrapFile
@@ -195,7 +195,7 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		// Both the cases [429 & 5xx] we schedule a retry after 10 minutes.
 
 		response := utils.GetAPIManagerInstance().Request(builder)
-		if response != nil && response.StatusCode == constants.StatusCodeGET {
+		if response != nil && response.StatusCode == constants.StatusCodeOK {
 			log.Debug(messages.FetchAPISuccessful)
 			jsonData, _ := json.Marshal(response.Result)
 			// asynchronously write the response to persistent volume, if enabled

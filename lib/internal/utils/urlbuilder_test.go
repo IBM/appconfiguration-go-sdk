@@ -25,13 +25,13 @@ import (
 
 func TestURLBuilder(t *testing.T) {
 
-	// test when override server host is provided
+	// test websocket url
 	urlBuilder := GetInstance()
-	urlBuilder.SetWebSocketURL("wss://overrideServerHost/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID")
-	assert.Equal(t, "wss://overrideServerHost/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID", urlBuilder.GetWebSocketURL())
+	urlBuilder.SetWebSocketURL("wss://test-service.com/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID")
+	assert.Equal(t, "wss://test-service.com/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID", urlBuilder.GetWebSocketURL())
 	resetURLBuilderInstance()
 
-	// test when override server host is not provided
+	// test base service url
 	urlBuilder = GetInstance()
 	urlBuilder.SetBaseServiceURL("https://region.apprapp.cloud.ibm.com")
 	assert.Equal(t, "https://region.apprapp.cloud.ibm.com", urlBuilder.GetBaseServiceURL())

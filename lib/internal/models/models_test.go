@@ -17,21 +17,23 @@
 package models
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
+
+var value []interface{}
+
+func Int(v int) *int { return &v }
+
+func Interface(v interface{}) *interface{} { return &v }
 
 var rule = Rule{
 	Operator:      "startsWith",
 	AttributeName: "attribute_name",
-	Values:        values,
+	Values:        append(value, "first"),
 }
-
-var strs = []string{"first"}
-var values = make([]interface{}, len(strs))
 
 var segment = Segment{
 	Name:      "segmentName",
@@ -44,20 +46,22 @@ var ruleElem = RuleElem{
 }
 
 var segmentRule = SegmentRule{
-	Order: 1,
-	Value: true,
-	Rules: []RuleElem{ruleElem},
+	RolloutPercentage: Interface(50.0),
+	Order:             1,
+	Value:             true,
+	Rules:             []RuleElem{ruleElem},
 }
 
 var feature = Feature{
-	Name:          "featureName",
-	FeatureID:     "featureID",
-	EnabledValue:  true,
-	DisabledValue: false,
-	Enabled:       true,
-	DataType:      "BOOLEAN",
-	Format:        "",
-	SegmentRules:  []SegmentRule{segmentRule},
+	Name:              "featureName",
+	FeatureID:         "featureID",
+	EnabledValue:      true,
+	DisabledValue:     false,
+	Enabled:           true,
+	DataType:          "BOOLEAN",
+	Format:            "",
+	SegmentRules:      []SegmentRule{segmentRule},
+	RolloutPercentage: Int(60),
 }
 
 var property = Property{
@@ -109,6 +113,9 @@ func TestFeature(t *testing.T) {
 	if feature.GetDisabledValue() != false {
 		t.Error("Expected TestFeatureGetDisabledValue test case to pass")
 	}
+	if feature.GetRolloutPercentage() != 60 {
+		t.Error("Expected TestFeatureGetRolloutPercentage test case to pass")
+	}
 	if feature.IsEnabled() != true {
 		t.Error("Expected TestFeatureIsEnabled test case to pass")
 	}
@@ -117,16 +124,38 @@ func TestFeature(t *testing.T) {
 	}
 	entityMap := make(map[string]interface{})
 	entityMap["attribute_name"] = "first"
+	if feature.GetCurrentValue("entityID123") != true {
+		t.Error("Expected TestFeatureGetCurrentValueBoolean test case to pass")
+	}
 	if feature.GetCurrentValue("entityID123", entityMap) != true {
+		t.Error("Expected TestFeatureGetCurrentValueBoolean test case to pass")
+	}
+	if feature.GetCurrentValue("entityID456", entityMap) != false {
 		t.Error("Expected TestFeatureGetCurrentValueBoolean test case to pass")
 	}
 	feature.DataType = "STRING"
 	feature.Format = "TEXT"
 	feature.EnabledValue = "EnabledValue"
 	feature.DisabledValue = "DisabledValue"
+	segmentRule.Value = "OverriddenValue"
+	feature.SegmentRules = []SegmentRule{segmentRule}
+	if feature.GetCurrentValue("entityID123") != "EnabledValue" {
+		t.Error("Expected TestFeatureGetCurrentValueStringText test case to pass")
+	}
+	if feature.GetCurrentValue("entityID123", entityMap) != "OverriddenValue" {
+		t.Error("Expected TestFeatureGetCurrentValueStringText test case to pass")
+	}
+	if feature.GetCurrentValue("entityID456", entityMap) != "DisabledValue" {
+		t.Error("Expected TestFeatureGetCurrentValueStringText test case to pass")
+	}
+	entityMap["attribute_name"] = "second"
 	if feature.GetCurrentValue("entityID123", entityMap) != "EnabledValue" {
 		t.Error("Expected TestFeatureGetCurrentValueStringText test case to pass")
 	}
+	if feature.GetCurrentValue("entityID456", entityMap) != "DisabledValue" {
+		t.Error("Expected TestFeatureGetCurrentValueStringText test case to pass")
+	}
+	entityMap["attribute_name"] = "first"
 	feature.DataType = "STRING"
 	feature.Format = "JSON"
 	enabledJSON := make(map[string]interface{})
@@ -135,27 +164,42 @@ func TestFeature(t *testing.T) {
 	disabledJSON := make(map[string]interface{})
 	disabledJSON["key"] = "disabled value"
 	feature.DisabledValue = disabledJSON
-	if !reflect.DeepEqual(feature.GetCurrentValue("entityId123", entityMap), enabledJSON) {
+	overriddenJSON := make(map[string]interface{})
+	overriddenJSON["key"] = "overridden value"
+	segmentRule.Value = overriddenJSON
+	feature.SegmentRules = []SegmentRule{segmentRule}
+	if !reflect.DeepEqual(feature.GetCurrentValue("entityID123", entityMap), overriddenJSON) {
 		t.Error("Expected TestFeatureGetCurrentValueStringJSON test case to pass")
 	}
 	feature.DataType = "STRING"
 	feature.Format = "YAML"
 	feature.EnabledValue = "men:\n  - John Smith\n  - Bill Jones\nwomen:\n  - Mary Smith\n  - Susan Williams"
 	feature.DisabledValue = "key:value"
-	if !reflect.DeepEqual(feature.GetCurrentValue("entityId123", entityMap), feature.GetEnabledValue()) {
+	segmentRule.Value = "key1:value1"
+	feature.SegmentRules = []SegmentRule{segmentRule}
+	if !reflect.DeepEqual(feature.GetCurrentValue("entityID123", entityMap), "key1:value1") {
 		t.Error("Expected TestFeatureGetCurrentValueStringYAML test case to pass")
 	}
 	feature.DataType = "NUMERIC"
 	feature.Format = ""
 	feature.EnabledValue = float64(1)
 	feature.DisabledValue = float64(0)
-	if feature.GetCurrentValue("entityID123", entityMap) != float64(1) {
+	segmentRule.Value = float64(5)
+	feature.SegmentRules = []SegmentRule{segmentRule}
+	if feature.GetCurrentValue("entityID123") != float64(1) {
+		t.Error("Expected TestFeatureGetCurrentValueNumeric test case to pass")
+	}
+	if feature.GetCurrentValue("entityID456") != float64(0) {
+		t.Error("Expected TestFeatureGetCurrentValueNumeric test case to pass")
+	}
+	if feature.GetCurrentValue("entityID123", entityMap) != float64(5) {
+		t.Error("Expected TestFeatureGetCurrentValueNumeric test case to pass")
+	}
+	if feature.GetCurrentValue("entityID456", entityMap) != float64(0) {
 		t.Error("Expected TestFeatureGetCurrentValueNumeric test case to pass")
 	}
 	feature.DataType = "INVALID_DATATYPE"
 	feature.Format = ""
-	feature.EnabledValue = float64(1)
-	feature.DisabledValue = float64(0)
 	if feature.GetCurrentValue("entityID123", entityMap) != nil {
 		t.Error("Expected TestFeatureGetCurrentValueWithInvalidFeatureDatatype test case to pass")
 	}
@@ -191,6 +235,8 @@ func TestFeature(t *testing.T) {
 }
 
 func TestProperty(t *testing.T) {
+	segmentRule.Value = true
+	property.SegmentRules = []SegmentRule{segmentRule}
 	if property.GetPropertyID() != "propertyID" {
 		t.Error("Expected TestPropertyGetPropertyID test case to pass")
 	}
@@ -217,7 +263,12 @@ func TestProperty(t *testing.T) {
 	property.DataType = "STRING"
 	property.Format = "TEXT"
 	property.Value = "Value"
-	if property.GetCurrentValue("entityID123", entityMap) != "Value" {
+	segmentRule.Value = "OverriddenValue"
+	property.SegmentRules = []SegmentRule{segmentRule}
+	if property.GetCurrentValue("entityID123") != "Value" {
+		t.Error("Expected TestPropertyGetCurrentValueStringText test case to pass")
+	}
+	if property.GetCurrentValue("entityID123", entityMap) != "OverriddenValue" {
 		t.Error("Expected TestPropertyGetCurrentValueStringText test case to pass")
 	}
 	property.DataType = "STRING"
@@ -225,19 +276,30 @@ func TestProperty(t *testing.T) {
 	propertyValueJSON := make(map[string]interface{})
 	propertyValueJSON["key"] = "property value"
 	property.Value = propertyValueJSON
-	if !reflect.DeepEqual(property.GetCurrentValue("entityId123", entityMap), propertyValueJSON) {
+	overriddenJSON := make(map[string]interface{})
+	overriddenJSON["key"] = "overridden value"
+	segmentRule.Value = overriddenJSON
+	property.SegmentRules = []SegmentRule{segmentRule}
+	if !reflect.DeepEqual(property.GetCurrentValue("entityId123", entityMap), overriddenJSON) {
 		t.Error("Expected TestPropertyGetCurrentValueStringJson test case to pass")
 	}
 	property.DataType = "STRING"
 	property.Format = "YAML"
 	property.Value = "men:\n  - John Smith\n  - Bill Jones\nwomen:\n  - Mary Smith\n  - Susan Williams"
-	if !reflect.DeepEqual(property.GetCurrentValue("entityId123", entityMap), property.GetValue()) {
+	segmentRule.Value = "key1:value1"
+	property.SegmentRules = []SegmentRule{segmentRule}
+	if !reflect.DeepEqual(property.GetCurrentValue("entityId123", entityMap), "key1:value1") {
 		t.Error("Expected TestPropertyGetCurrentValueStringYaml test case to pass")
 	}
 	property.DataType = "NUMERIC"
 	property.Format = ""
 	property.Value = float64(1)
-	if property.GetCurrentValue("entityID123", entityMap) != float64(1) {
+	segmentRule.Value = float64(5)
+	property.SegmentRules = []SegmentRule{segmentRule}
+	if property.GetCurrentValue("entityID123", entityMap) != float64(5) {
+		t.Error("Expected TestPropertyGetCurrentValueNumeric test case to pass")
+	}
+	if property.GetCurrentValue("entityID123") != float64(1) {
 		t.Error("Expected TestPropertyGetCurrentValueNumeric test case to pass")
 	}
 	property.DataType = "INVALID_DATATYPE"
@@ -289,10 +351,16 @@ func TestSegment(t *testing.T) {
 }
 
 func TestSegmentRule(t *testing.T) {
+	segmentRule.Value = true
+	_ = []SegmentRule{segmentRule}
+
 	if segmentRule.GetValue() != true {
 		t.Error("Expected TestSegmentRuleGetValue test case to pass")
 	}
 	if segmentRule.GetOrder() != 1 {
+		t.Error("Expected TestSegmentRuleGetOrder test case to pass")
+	}
+	if segmentRule.GetRolloutPercentage() != 50.0 {
 		t.Error("Expected TestSegmentRuleGetOrder test case to pass")
 	}
 	if !reflect.DeepEqual(segmentRule.GetRules()[0].Segments, ruleElem.Segments) {
@@ -308,12 +376,12 @@ func TestRule(t *testing.T) {
 	if rule.GetAttributeName() != "attribute_name" {
 		t.Error("Expected TestRuleGetAttributeName test case to pass")
 	}
-	if !reflect.DeepEqual(rule.GetValues(), values) {
+	if !reflect.DeepEqual(rule.GetValues(), rule.Values) {
 		t.Error("Expected TestRuleGetValues test case to pass")
 	}
 	entityMap := make(map[string]interface{})
 	entityMap["attribute_name"] = "first"
-	if rule.EvaluateRule(entityMap) != false {
+	if rule.EvaluateRule(entityMap) != true {
 		t.Error("Expected TestRuleEvaluateRule test case to pass")
 	}
 	entityMap["attribute_name"] = "last"

@@ -310,7 +310,7 @@ func (mt *Metering) sendToServer(guid string, collectionUsages CollectionUsages)
 		return
 	}
 	response := GetAPIManagerInstance().Request(builder)
-	if response != nil && response.StatusCode == constants.StatusCodePOST {
+	if response != nil && response.StatusCode == constants.StatusCodeAccepted {
 		log.Debug(messages.SendMeteringSuccess)
 	} else {
 		// [first] Log the accurate reason
