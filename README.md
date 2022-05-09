@@ -25,7 +25,7 @@ properties for distributed applications centrally.
 
 ## Prerequisites
 
-- Go version(1.17, 1.16.7) or later is recommended
+- Go version 1.16 or newer
 
 ## Installation
 
