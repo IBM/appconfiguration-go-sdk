@@ -27,6 +27,7 @@ func IsValidDataType(category string) bool {
 	case
 		"NUMERIC",
 		"BOOLEAN",
+		"SECRETREF",
 		"STRING":
 		return true
 	}
@@ -39,6 +40,8 @@ func getTypeCastedValue(val interface{}, valType string, valFormat string) inter
 		return val.(float64)
 	} else if valType == "BOOLEAN" && isBool(val) {
 		return val.(bool)
+	} else if valType == "SECRETREF" {
+		return val
 	} else if valType == "STRING" {
 		if valFormat == "TEXT" && isString(val) {
 			return val.(string)

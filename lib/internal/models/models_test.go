@@ -17,10 +17,11 @@
 package models
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var value []interface{}
@@ -73,6 +74,28 @@ var property = Property{
 	SegmentRules: []SegmentRule{segmentRule},
 }
 
+var secretPropertyValueJSON = map[string]interface{}{"secret_type": "username_password", "sm_instance_crn": "crn:v1:staging:public:secrets-manager:eu-gb:a/3268cfe9e25d41q1232132f9a731a:d614a8ba-a13a-41cc-9e18-82132133ad9845::"}
+var secretPropertySegmentValueJSON = map[string]interface{}{"id": "1212433434353535"}
+
+var secretRefSegmentRule = SegmentRule{
+	Order: 1,
+	Value: secretPropertySegmentValueJSON,
+	Rules: []RuleElem{ruleElem},
+}
+
+var propertySecretRefData = Property{
+	DataType:     "SECRETREF",
+	Format:       "",
+	Name:         "propertyName",
+	PropertyID:   "propertySecretDataId",
+	Value:        secretPropertyValueJSON,
+	SegmentRules: []SegmentRule{secretRefSegmentRule},
+}
+
+var secretproperty = SecretProperty{
+	PropertyID: "propertySecretDataId",
+}
+
 func TestCacheWithDebugMode(t *testing.T) {
 	os.Setenv("ENABLE_DEBUG", "true")
 	featureMap := make(map[string]Feature)
@@ -81,6 +104,7 @@ func TestCacheWithDebugMode(t *testing.T) {
 	segmentMap["segmentID"] = segment
 	propertyMap := make(map[string]Property)
 	propertyMap["propertyID"] = property
+	propertyMap["propertySecretDataId"] = propertySecretRefData
 	SetCache(featureMap, propertyMap, segmentMap)
 	cacheInstance := GetCacheInstance()
 	if !reflect.DeepEqual(cacheInstance.FeatureMap, featureMap) {
@@ -331,6 +355,28 @@ func TestProperty(t *testing.T) {
 	if property.GetCurrentValue("entityID123", entityMap) != true {
 		t.Error("Expected TestPropertyGetCurrentValueWrongAttribute test case to pass")
 	}
+}
+
+func TestSecretProperty(t *testing.T) {
+
+	entityMap := make(map[string]interface{})
+	entityMap["email"] = "user@ibm.com"
+	if secretproperty.PropertyID != "propertySecretDataId" {
+		t.Error("Expected test case to pass but failed")
+	}
+	_, _, entityIDError := secretproperty.GetCurrentValue("", entityMap)
+	if entityIDError == nil {
+		t.Error("Expected TestSecretPropertyGetCurrentValueWithEmptyEntityID test case to pass")
+	}
+	_, _, multipleEntityMapError := secretproperty.GetCurrentValue("entityID123", entityMap, entityMap)
+	if multipleEntityMapError == nil {
+		t.Error("Expected TestSecretPropertyGetCurrentValue test case to pass")
+	}
+	_, _, secretIDError := secretproperty.GetCurrentValue("entityID123", entityMap)
+	if secretIDError == nil {
+		t.Error("Expected TestSecretPropertyGetCurrentValueWithNoSecretId test case to pass")
+	}
+
 }
 
 func TestSegment(t *testing.T) {

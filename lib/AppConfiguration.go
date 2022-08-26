@@ -23,6 +23,7 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1"
 )
 
 // AppConfiguration : Struct having init and configInstance.
@@ -198,6 +199,20 @@ func (ac *AppConfiguration) GetProperties() (map[string]models.Property, error) 
 	}
 	log.Error(messages.CollectionInitError)
 	return nil, errors.New(messages.InitError)
+}
+
+// GetSecret : Get Secret
+func (ac *AppConfiguration) GetSecret(propertyID string, secretMangerObject *sm.SecretsManagerV1) (models.SecretProperty, error) {
+	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+		if secretMangerObject != nil {
+			return ac.configurationHandlerInstance.getSecret(propertyID, secretMangerObject)
+		} else {
+			log.Error(messages.InvalidSecretManagerMessage)
+			return models.SecretProperty{}, errors.New("error: " + messages.InvalidSecretManagerMessage)
+		}
+	}
+	log.Error(messages.CollectionInitError)
+	return models.SecretProperty{}, errors.New(messages.InitError)
 }
 
 // EnableDebug : Enable Debug

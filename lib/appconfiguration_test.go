@@ -170,6 +170,25 @@ func TestGetProperty(t *testing.T) {
 	reset(ac)
 }
 
+func TestGetSecret(t *testing.T) {
+	// test get secret property when not initialised properly
+	ac := GetInstance()
+	_, err := ac.GetSecret("propertySecretId", nil)
+	if err == nil {
+		t.Error("Expected GetSecret to return error when initialization of app config and cache has failed")
+	}
+	// assert.Error(t, err, "Expected GetSecret to return error when initialization of app config and cache has failed")
+	reset(ac)
+	mockInit(ac)
+	mockSetCache(ac)
+	_, err = ac.GetSecret("propertySecretId", nil)
+	if err == nil {
+		t.Error("Expected GetSecret to return error when secretManagerObject is failed")
+	}
+	reset(ac)
+	// assert.Error(t, err, "Expected GetSecret to return error when secretManagerObject is failed")
+}
+
 func TestGetProperties(t *testing.T) {
 	// test get properties when not initialised properly
 	ac := GetInstance()

@@ -249,3 +249,12 @@ const AuthTokenError = "Invalid API Key is provided. Could not generate Bearer t
 
 // RetryScheduledMessage : RetryScheduledMessage const
 const RetryScheduledMessage = "Scheduled the API request to retry after 10 minutes."
+
+//InvalidPropertyValueMessage : InvalidPropertyValueMessage const
+const InvalidPropertyValueMessage = "Property Value is either invalid or empty."
+
+//InvalidSecretManagerMessage : InvalidSecretManagerMessage const
+const InvalidSecretManagerMessage = "Secret Manager object is either invalid or empty."
+
+//InvalidSecretID : InvalidSecretIdMessage const
+const InvalidSecretID = "Secret Id is either invalid or empty."

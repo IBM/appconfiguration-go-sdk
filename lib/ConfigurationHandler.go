@@ -20,17 +20,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"path/filepath"
+	"sync"
+	"time"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/IBM/go-sdk-core/v5/core"
+	sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1"
 	"github.com/gorilla/websocket"
-	"net/http"
-	"path/filepath"
-	"sync"
-	"time"
 )
 
 type configurationUpdateListenerFunc func()
@@ -301,6 +303,20 @@ func (ch *ConfigurationHandler) getProperty(propertyID string) (models.Property,
 	}
 	log.Error(messages.InvalidPropertyID, propertyID)
 	return models.Property{}, errors.New(messages.ErrorInvalidPropertyID + propertyID)
+}
+
+// GetSecret : Get Secret
+func (ch *ConfigurationHandler) getSecret(propertyID string, secretMangerObject *sm.SecretsManagerV1) (models.SecretProperty, error) {
+	property, err := ch.getProperty(propertyID)
+	if err != nil {
+		return models.SecretProperty{}, err
+	}
+	if property.GetPropertyDataType() == "SECRETREF" {
+		ch.cache.SecretManagerMap[propertyID] = secretMangerObject
+		return models.SecretProperty{PropertyID: propertyID}, nil
+	}
+	log.Error("Invalid operation: GetSecret() cannot be called on a ", property.GetPropertyDataType(), " property.")
+	return models.SecretProperty{}, errors.New("error: GetSecret() cannot be called on a " + property.GetPropertyDataType() + " property.")
 }
 
 func (ch *ConfigurationHandler) registerConfigurationUpdateListener(chl configurationUpdateListenerFunc) {
