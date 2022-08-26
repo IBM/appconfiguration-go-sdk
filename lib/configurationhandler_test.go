@@ -281,6 +281,65 @@ func TestConfigHandlerGetProperties(t *testing.T) {
 
 }
 
+func TestConfigHandlerGetSecret(t *testing.T) {
+	// when property id exists in the cache
+	ch := GetConfigurationHandlerInstance()
+	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":90}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"SECRETREF","value":{"sm_instance_crn": "crn:v1:staging:public:secrets-manager:eu-gb:a/3268cfe9e25d4146a03b31f22f9a731a:d614a8ba-a13a-41cc-9e18-8fbff3ad9845::",
+    "secret_type": "username_password"},"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	ch.saveInCache([]byte(data))
+	_, err := ch.getProperty("show-ad1")
+	if err == nil {
+		t.Error("Expected getProperty to fail as the show-ad1 not found in the data")
+	}
+	// assert.Error(t, err, "Expected GetSecret to return error")
+
+	//when the data type is invalid or different other than SECRETREF
+	data = `{"features": [{"name": "Cycle Rentals8",
+			"feature_id": "cycle-rentals8",
+			"type": "BOOLEAN",
+			"enabled_value": true,
+			"disabled_value": false,
+			"segment_rules": [],
+			"enabled": true,
+			"rollout_percentage": 90
+		}],
+		"properties": [{
+			"name": "ShowAd2",
+			"property_id": "show-ad2",
+			"tags": "",
+			"type": "BOOLEAN",
+			"value": false,
+			"segment_rules": [],
+			"created_time": "2021-05-26T06:23:18Z",
+			"updated_time": "2021-06-08T03:38:38Z",
+			"evaluation_time": "2021-06-03T10:08:46Z"
+		}],
+		"segments": [{
+			"name": "beta-users",
+			"segment_id": "knliu818",
+			"rules": [{
+				"values": ["ibm.com"],
+				"operator": "contains",
+				"attribute_name": "email"
+			}]
+		}, {
+			"name": "ibm employees",
+			"segment_id": "ka761hap",
+			"rules": [{
+				"values": ["ibm.com", "in.ibm.com"],
+				"operator": "endsWith",
+				"attribute_name": "email"
+			}]
+		}]
+	}`
+	ch.saveInCache([]byte(data))
+	_, err = ch.getSecret("show-ad2", nil)
+	if err == nil {
+		t.Error("Expected getProperty to fail as the show-ad2 property type is not SECRETREF")
+	}
+
+}
+
 func TestConfigHandlerGetFeature(t *testing.T) {
 	// when property id exists in the cache
 	ch := GetConfigurationHandlerInstance()

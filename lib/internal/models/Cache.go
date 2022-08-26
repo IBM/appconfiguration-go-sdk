@@ -24,9 +24,10 @@ import (
 
 // Cache : Cache struct
 type Cache struct {
-	FeatureMap  map[string]Feature
-	PropertyMap map[string]Property
-	SegmentMap  map[string]Segment
+	FeatureMap       map[string]Feature
+	PropertyMap      map[string]Property
+	SegmentMap       map[string]Segment
+	SecretManagerMap map[string]interface{}
 }
 
 // CacheInstance : Cache Instance
@@ -47,6 +48,7 @@ func SetCache(featureMap map[string]Feature, propertyMap map[string]Property, se
 	CacheInstance.FeatureMap = featureMap
 	CacheInstance.PropertyMap = propertyMap
 	CacheInstance.SegmentMap = segmentMap
+	CacheInstance.SecretManagerMap = make(map[string]interface{})
 	log.Debug(CacheInstance)
 }
 

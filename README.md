@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.3.0
+# IBM Cloud App Configuration Go server SDK 0.3.1
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -24,8 +24,8 @@ the cloud to activate or deactivate features in your application or environment,
 properties for distributed applications centrally.
 
 ## Prerequisites
-
 - Go version 1.16 or newer
+
 
 ## Installation
 
@@ -232,6 +232,56 @@ propertyVal := property.GetCurrentValue(entityId, entityAttributes)
   evaluation. An attribute is a parameter that is used to define a segment. The SDK uses the attribute values to
   determine if the specified entity satisfies the targeting rules, and returns the appropriate property value.
 
+## Get secret property
+
+```go
+secretPropertyObject, err := appConfiguration.GetSecret(propertyID, secretsManagerObject)
+```
+
+* propertyID: propertyID is the unique string identifier, using this we will be able to fetch the property which will provide the necessary data to fetch the secret.
+* secretsManagerObject: secretsManagerObject is an Secret Manager variable or object which will be used for getting the secrets during the secret property evaluation. How to create a secret manager object refer the secret manager docs:https://cloud.ibm.com/apidocs/secrets-manager?code=go
+
+## Evaluate a secret property
+
+Use the `secretPropertyObject.GetCurrentValue(entityId, entityAttributes)` method to evaluate the value of the secret property.
+GetCurrentValue returns the secret value based on the evaluation.
+
+```go
+entityId := "john_doe"
+entityAttributes := make(map[string]interface{})
+entityAttributes["city"] = "Bangalore"
+entityAttributes["country"] = "India"
+
+getSecretRes, detailedResponse, err := secretPropertyObject.GetCurrentValue(entityId, entityAttributes)
+```
+
+* entityId: entityId is a string identifier related to the Entity against which the property will be evaluated. For
+  example, an entity might be an instance of an app that runs on a mobile device, a microservice that runs on the cloud,
+  or a component of infrastructure that runs that microservice. For any entity to interact with App Configuration, it
+  must provide a unique entity ID.
+* entityAttributes: entityAttributes is a map of type `map[string]interface{}` consisting of the attribute name and
+  their values that defines the specified entity. This is an optional parameter if the property is not configured with
+  any targeting definition. If the targeting is configured, then entityAttributes should be provided for the rule
+  evaluation. An attribute is a parameter that is used to define a segment. The SDK uses the attribute values to
+  determine if the specified entity satisfies the targeting rules, and returns the appropriate value.
+
+## How to access the payload secret data from the response
+```go
+//make sure this import statement is added
+import (sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1")
+
+secret := getSecretRes.Resources[0].(*sm.SecretResource)
+secretData := secret.SecretData.(map[string]interface{})
+payload := secretData["payload"]
+```
+
+The GetCurrentValue will be sending the 3 objects as part of response. 
+
+* getSecretRes:  this will give the meta data and payload.
+* detailedResponse: this will give entire data which includes the http response header data, meta data and payload.
+* err: this will give the error response if the request is invalid or failed for some reason.
+> Note: `secretData["payload"] will return interface{}` so based on the data we need to do the type casting.
+
 ## Fetching the appConfigClient across other modules
 
 Once the SDK is initialized, the appConfigClient can be obtained across other modules as shown below:
@@ -254,14 +304,15 @@ if (err == nil) {
 ## Supported Data types
 
 App Configuration service allows to configure the feature flag and properties in the following data types : Boolean,
-Numeric, String. The String data type can be of the format of a text string , JSON or YAML. The SDK processes each
+Numeric, SecretRef, String. The String data type can be of the format of a text string , JSON or YAML. The SDK processes each
 format accordingly as shown in the below table.
 <details><summary>View Table</summary>
 
-| **Feature or Property value**                                                                                      | **DataType** | **DataFormat** | **Type of data returned <br> by `GetCurrentValue()`** | **Example output**                                                   |
+| **Feature value or Property value**                                                                                      | **DataType** | **DataFormat** | **Type of data returned <br> by `GetCurrentValue()`** | **Example output**                                                   |
 | ------------------------------------------------------------------------------------------------------------------ | ------------ | -------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
 | `true`                                                                                                             | BOOLEAN      | not applicable | `bool`                                                | `true`                                                               |
 | `25`                                                                                                               | NUMERIC      | not applicable | `float64`                                             | `25`                                                                 |
+| <pre>{<br> "secret_type": "kv",<br>"id": "secret_id_data_here",<br> "sm_instance_crn": "crn_data_added-here"<br>}</pre>                                                                                                               | SECRETREF(`this type is applicable only for Property`)     | not applicable | `map[string]interface{}`                                             | <pre>{<br>"metadata": {<br>"collection_type":"application/vnd.ibm.secrets-manager.secret+json",<br>"collection_total": 1<br>},<br>"resources": [{"created_by": "iam-ServiceId-e4a2f0a4-3c76-4bef-b1f2-fbeae11c0f21",<br>"creation_date": "2020-10-05T21:33:11Z",<br>"crn": "crn:v1:bluemix:public:secrets-manager:us-south:a/a5ebf2570dcaedf18d7ed78e216c263a:f1bc94a6-64aa-4c55-b00f-f6cd70e4b2ce:secret:cb7a2502-8ede-47d6-b5b6-1b7af6b6f563",<br>"description": "Extended description for this secret.",<br>"expiration_date": "2021-01-01T00:00:00Z",<br>"id": "cb7a2502-8ede-47d6-b5b6-1b7af6b6f563",<br>"labels": ["dev","us-south"],<br>"last_update_date": "2020-10-05T21:33:11Z",<br>"name": "example-arbitrary-secret",<br>"secret_data": {"payload": "secret-data"},<br>"secret_type": "arbitrary",<br>"state": 1,<br>"state_description": "Active",<br>"versions_total": 1,<br>"versions": [{"created_by": "iam-ServiceId-222b47ab-b08e-4619-b68f-8014a2c3acb8","creation_date": "2020-11-23T20:15:01Z","id": "50277266-d706-4b3e-badb-f07257f8f581","payload_available": true,"downloaded": true}],"locks_total": 2}]<br>}</pre>  `Note: Along with the above data we will also provide the detailedResponse and error data. For more info on the response data refer #how-to-access-the-payload-secret-data-from-the-response`                                                                |
 | "a string text"                                                                                                    | STRING       | TEXT           | `string`                                              | `a string text`                                                      |
 | <pre>{<br>  "firefox": {<br>    "name": "Firefox",<br>    "pref_url": "about:config"<br>  }<br>}</pre> | STRING       | JSON           | `map[string]interface{}`                              | `map[browsers:map[firefox:map[name:Firefox pref_url:about:config]]]` |
 | <pre>men:<br>  - John Smith<br>  - Bill Jones<br>women:<br>  - Mary Smith<br>  - Susan Williams</pre>  | STRING       | YAML           | `map[string]interface{}`                              | `map[men:[John Smith Bill Jones] women:[Mary Smith Susan Williams]]` |

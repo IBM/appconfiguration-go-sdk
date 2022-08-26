@@ -107,6 +107,7 @@ func (p *Property) GetCurrentValue(entityID string, entityAttributes ...map[stri
 		val := p.propertyEvaluation(entityID, temp)
 		return getTypeCastedValue(val, p.GetPropertyDataType(), p.GetPropertyDataFormat())
 	}
+	log.Error("Invalid property")
 	return nil
 }
 
