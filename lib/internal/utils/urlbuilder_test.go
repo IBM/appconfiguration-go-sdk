@@ -37,6 +37,20 @@ func TestURLBuilder(t *testing.T) {
 	assert.Equal(t, "https://region.apprapp.cloud.ibm.com", urlBuilder.GetBaseServiceURL())
 	resetURLBuilderInstance()
 
+	// test private endpoint url (prod endpoints)
+	urlBuilder = GetInstance()
+	urlBuilder.Init("collectionId", "environmentId", "region", "guid", "apikey", "", true)
+	assert.Equal(t, "https://private.region.apprapp.cloud.ibm.com", urlBuilder.GetBaseServiceURL())
+	assert.Equal(t, "wss://private.region.apprapp.cloud.ibm.com/apprapp/wsfeature?instance_id=guid&collection_id=collectionId&environment_id=environmentId", urlBuilder.GetWebSocketURL())
+	resetURLBuilderInstance()
+
+	// test private endpoint url (dev & stage endpoints)
+	urlBuilder = GetInstance()
+	urlBuilder.Init("collectionId", "environmentId", "region", "guid", "apikey", "https://region.apprapp.test.cloud.ibm.com", true)
+	assert.Equal(t, "https://private.region.apprapp.test.cloud.ibm.com", urlBuilder.GetBaseServiceURL())
+	assert.Equal(t, "wss://private.region.apprapp.test.cloud.ibm.com/apprapp/wsfeature?instance_id=guid&collection_id=collectionId&environment_id=environmentId", urlBuilder.GetWebSocketURL())
+	resetURLBuilderInstance()
+
 	// test when get token encounters an error while retrieving token and returns an token of size 0
 	urlBuilder = GetInstance()
 	urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
