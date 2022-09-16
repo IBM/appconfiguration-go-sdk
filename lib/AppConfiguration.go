@@ -45,6 +45,8 @@ var appConfigurationInstance *AppConfiguration
 
 var overrideServiceUrl = ""
 
+var usePrivateEndpoint = false
+
 // var log = logrus.New()
 
 // REGION_US_SOUTH : Dallas Region
@@ -83,6 +85,15 @@ func OverrideServiceUrl(url string) {
 	overrideServiceUrl = url
 }
 
+// UsePrivateEndpoint : Use this method to set the SDK to connect to App Configuration service
+// by using a private endpoint that is accessible only through the IBM Cloud private network.
+// Be default, it is set to false.
+//
+//NOTE: This method must be called before calling the `Init` function on the SDK.
+func (ac *AppConfiguration) UsePrivateEndpoint(usePrivateEndpointParam bool) {
+	usePrivateEndpoint = usePrivateEndpointParam
+}
+
 // Init : Init App Configuration Instance
 func (ac *AppConfiguration) Init(region string, guid string, apikey string) {
 	if len(region) == 0 || len(guid) == 0 || len(apikey) == 0 {
@@ -98,7 +109,7 @@ func (ac *AppConfiguration) Init(region string, guid string, apikey string) {
 		return
 	}
 	ac.configurationHandlerInstance = GetConfigurationHandlerInstance()
-	ac.configurationHandlerInstance.Init(region, guid, apikey)
+	ac.configurationHandlerInstance.Init(region, guid, apikey, usePrivateEndpoint)
 	ac.isInitialized = true
 }
 

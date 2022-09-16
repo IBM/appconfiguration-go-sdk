@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.3.1
+# IBM Cloud App Configuration Go server SDK 0.3.2
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -84,6 +84,17 @@ using **`AppConfiguration.GetInstance()`**. [See this example below](#fetching-t
   Configuration dashboard.
 * collectionId: Id of the collection created in App Configuration service instance under the **Collections** section.
 * environmentId: Id of the environment created in App Configuration service instance under the **Environments** section.
+
+### Connect using private network connection (optional)
+
+Set the SDK to connect to App Configuration service by using a private endpoint that is accessible only through the IBM
+Cloud private network.
+
+```go
+appConfigClient.UsePrivateEndpoint(true)
+```
+
+This must be done before calling the `Init` function on the SDK.
 
 ### (Optional)
 

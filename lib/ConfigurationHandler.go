@@ -45,6 +45,7 @@ type ConfigurationHandler struct {
 	apikey                      string
 	guid                        string
 	region                      string
+	usePrivateEndpoint          bool
 	urlBuilder                  *utils.URLBuilder
 	appConfig                   *AppConfiguration
 	cache                       *models.Cache
@@ -70,10 +71,11 @@ func GetConfigurationHandlerInstance() *ConfigurationHandler {
 }
 
 // Init : Init App Configuration Instance
-func (ch *ConfigurationHandler) Init(region, guid, apikey string) {
+func (ch *ConfigurationHandler) Init(region, guid, apikey string, usePrivateEndpoint bool) {
 	ch.region = region
 	ch.guid = guid
 	ch.apikey = apikey
+	ch.usePrivateEndpoint = usePrivateEndpoint
 }
 
 // SetContext : Set Context
@@ -81,7 +83,7 @@ func (ch *ConfigurationHandler) SetContext(collectionID, environmentID string, o
 	ch.collectionID = collectionID
 	ch.environmentID = environmentID
 	ch.urlBuilder = utils.GetInstance()
-	ch.urlBuilder.Init(ch.collectionID, ch.environmentID, ch.region, ch.guid, ch.apikey, overrideServiceUrl)
+	ch.urlBuilder.Init(ch.collectionID, ch.environmentID, ch.region, ch.guid, ch.apikey, overrideServiceUrl, ch.usePrivateEndpoint)
 	utils.GetMeteringInstance().Init(ch.guid, environmentID, collectionID)
 	ch.persistentCacheDirectory = options.PersistentCacheDirectory
 	ch.bootstrapFile = options.BootstrapFile

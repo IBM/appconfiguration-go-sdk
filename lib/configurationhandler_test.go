@@ -42,10 +42,11 @@ func mockLogger() {
 func TestInitConfigurationHandlerInstance(t *testing.T) {
 	// test init of config handler instance done properly
 	ch := GetConfigurationHandlerInstance()
-	ch.Init("us-south", "abc", "abc")
+	ch.Init("us-south", "abc", "abc", false)
 	assert.Equal(t, "us-south", ch.region)
 	assert.Equal(t, "abc", ch.apikey)
 	assert.Equal(t, "abc", ch.guid)
+	assert.Equal(t, false, ch.usePrivateEndpoint)
 }
 func TestConfigHandlerSetContext(t *testing.T) {
 	// test set context when initialised properly
@@ -135,7 +136,7 @@ func TestUpdateCacheAndListener(t *testing.T) {
 	// valid data but no listener method provided
 	data := `{ "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [], "created_time": "2021-05-26T06:23:18Z", "updated_time": "2021-06-08T03:38:38Z", "evaluation_time": "2021-06-03T10:08:46Z" } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`
 	ch := GetConfigurationHandlerInstance()
-	ch.Init("us-south", "abc", "abc")
+	ch.Init("us-south", "abc", "abc", false)
 	ch.updateCacheAndListener([]byte(data))
 	assert.Equal(t, 1, len(ch.cache.FeatureMap))
 	assert.Equal(t, 1, len(ch.cache.PropertyMap))
@@ -146,7 +147,7 @@ func TestUpdateCacheAndListener(t *testing.T) {
 
 	// valid data and listener method provided
 	ch = GetConfigurationHandlerInstance()
-	ch.Init("us-south", "abc", "abc")
+	ch.Init("us-south", "abc", "abc", false)
 	msg := ""
 	ch.configurationUpdateListener = func() {
 		msg = "Latest evaluation done."
@@ -164,7 +165,7 @@ func TestUpdateCacheAndListener(t *testing.T) {
 	// invalid data
 	data = "<not a valid json>"
 	ch = GetConfigurationHandlerInstance()
-	ch.Init("us-south", "abc", "abc")
+	ch.Init("us-south", "abc", "abc", false)
 	ch.updateCacheAndListener([]byte(data))
 	if hook.LastEntry().Message != "AppConfiguration - Error while unmarshalling JSON invalid character '<' looking for beginning of value" {
 		t.Errorf("Test failed: Incorrect error message")
@@ -180,7 +181,7 @@ func TestRegisterConfigurationUpdateListener(t *testing.T) {
 	mockLogger()
 	// test register config update listener when config handler is initialized
 	ch := GetConfigurationHandlerInstance()
-	ch.Init("us-south", "abc", "abc")
+	ch.Init("us-south", "abc", "abc", false)
 	ch.isInitialized = true
 	listenerBeforeRegisteration := ch.configurationUpdateListener
 	var listener configurationUpdateListenerFunc = func() {
@@ -192,7 +193,7 @@ func TestRegisterConfigurationUpdateListener(t *testing.T) {
 
 	// test register config update listener when config handler is not initialized
 	ch = GetConfigurationHandlerInstance()
-	ch.Init("us-south", "abc", "abc")
+	ch.Init("us-south", "abc", "abc", false)
 	ch.isInitialized = false
 	listenerBeforeRegisteration = ch.configurationUpdateListener
 	listener = func() {

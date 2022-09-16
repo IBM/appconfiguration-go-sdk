@@ -19,22 +19,23 @@ package utils
 import (
 	"github.com/IBM/go-sdk-core/v5/core"
 	"net/http"
-	"regexp"
+	"strings"
 )
 
 // URLBuilder : URLBuilder struct
 type URLBuilder struct {
-	baseURL       string
-	wsPath        string
-	path          string
-	service       string
-	httpBase      string
-	webSocketURL  string
-	events        string
-	region        string
-	guid          string
-	iamURL        string
-	authenticator core.Authenticator
+	baseURL               string
+	wsPath                string
+	path                  string
+	service               string
+	httpBase              string
+	webSocketURL          string
+	events                string
+	region                string
+	guid                  string
+	privateEndpointPrefix string
+	iamURL                string
+	authenticator         core.Authenticator
 }
 
 var urlBuilderInstance *URLBuilder
@@ -43,34 +44,53 @@ var urlBuilderInstance *URLBuilder
 func GetInstance() *URLBuilder {
 	if urlBuilderInstance == nil {
 		urlBuilderInstance = &URLBuilder{
-			baseURL:      ".apprapp.cloud.ibm.com",
-			wsPath:       "/wsfeature",
-			path:         "/feature/v1/instances/",
-			service:      "/apprapp",
-			httpBase:     "",
-			webSocketURL: "",
-			events:       "/events/v1/instances/",
-			region:       "",
-			guid:         "",
-			iamURL:       "https://iam.cloud.ibm.com",
+			baseURL:               ".apprapp.cloud.ibm.com",
+			privateEndpointPrefix: "private.",
+			wsPath:                "/wsfeature",
+			path:                  "/feature/v1/instances/",
+			service:               "/apprapp",
+			events:                "/events/v1/instances/",
+			httpBase:              "",
+			webSocketURL:          "",
+			iamURL:                "",
+			region:                "",
+			guid:                  "",
 		}
 	}
 	return urlBuilderInstance
 }
 
 // Init : Init
-func (ub *URLBuilder) Init(collectionID string, environmentID string, region string, guid string, apikey string, overrideServiceUrl string) {
+func (ub *URLBuilder) Init(collectionID string, environmentID string, region string, guid string, apikey string, overrideServiceUrl string, usePrivateEndpoint bool) {
 	ub.region = region
 	ub.guid = guid
+
+	// for dev & stage
 	if len(overrideServiceUrl) > 0 {
-		ub.httpBase = overrideServiceUrl
-		ub.iamURL = "https://iam.test.cloud.ibm.com"
-		var compile, _ = regexp.Compile(`http([a-z]*)://`)
-		ub.webSocketURL = "wss://" + compile.ReplaceAllString(overrideServiceUrl, "") + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
+		temp := strings.Split(overrideServiceUrl, "://")
+		if usePrivateEndpoint {
+			ub.httpBase = temp[0] + "://" + ub.privateEndpointPrefix + temp[1]
+			ub.iamURL = "https://private.iam.test.cloud.ibm.com"
+			ub.webSocketURL = "wss://" + ub.privateEndpointPrefix + temp[1] + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
+		} else {
+			ub.httpBase = overrideServiceUrl
+			ub.iamURL = "https://iam.test.cloud.ibm.com"
+			ub.webSocketURL = "wss://" + temp[1] + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
+
+		}
+		// for prod
 	} else {
-		ub.httpBase = "https://" + region + ub.baseURL
-		ub.webSocketURL = "wss://" + region + ub.baseURL + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
+		if usePrivateEndpoint {
+			ub.httpBase = "https://" + ub.privateEndpointPrefix + region + ub.baseURL
+			ub.iamURL = "https://private.iam.cloud.ibm.com"
+			ub.webSocketURL = "wss://" + ub.privateEndpointPrefix + region + ub.baseURL + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
+		} else {
+			ub.httpBase = "https://" + region + ub.baseURL
+			ub.iamURL = "https://iam.cloud.ibm.com"
+			ub.webSocketURL = "wss://" + region + ub.baseURL + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
+		}
 	}
+
 	// Create the authenticator.
 	var err error
 	ub.authenticator, err = core.NewIamAuthenticatorBuilder().
