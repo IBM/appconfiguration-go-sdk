@@ -3,17 +3,18 @@ module github.com/IBM/appconfiguration-go-sdk
 go 1.16
 
 require (
-	github.com/IBM/go-sdk-core/v5 v5.10.2
-	github.com/IBM/secrets-manager-go-sdk v1.0.45
-	github.com/google/uuid v1.2.0 // indirect
-	github.com/gorilla/websocket v1.4.2
-	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/IBM/go-sdk-core/v5 v5.13.1
+	github.com/IBM/secrets-manager-go-sdk v1.0.49
+	github.com/go-openapi/strfmt v0.21.7 // indirect
+	github.com/go-playground/validator/v10 v10.12.0 // indirect
+	github.com/gorilla/websocket v1.5.0
+	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/robfig/cron v1.2.0
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/spaolacci/murmur3 v1.1.0
-	github.com/stretchr/testify v1.8.0
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	github.com/stretchr/testify v1.8.2
+	go.mongodb.org/mongo-driver v1.11.4 // indirect
+	golang.org/x/crypto v0.8.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
 
