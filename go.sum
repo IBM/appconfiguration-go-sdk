@@ -1,8 +1,10 @@
 github.com/IBM/go-sdk-core/v5 v5.10.2/go.mod h1:WZPFasUzsKab/2mzt29xPcfruSk5js2ywAPwW4VJjdI=
 github.com/IBM/go-sdk-core/v5 v5.13.1 h1:zD6p3t1whAlRJo/VBmE69c8RcH9LCHL1n0/sO1MWlpw=
 github.com/IBM/go-sdk-core/v5 v5.13.1/go.mod h1:pVkN7IGmsSdmR1ZCU4E/cLcCclqRKMYgg7ya+O2Mk6g=
-github.com/IBM/secrets-manager-go-sdk v1.0.49 h1:wRxyjFpSoZz6brj55JSMk6Sb38dLrQYnsEKcdYibflo=
-github.com/IBM/secrets-manager-go-sdk v1.0.49/go.mod h1:QyDSznC6gJEXIGaj+JPxoEVtyXfkaxzId87mxcEb+vM=
+github.com/IBM/secrets-manager-go-sdk v1.2.0 h1:bgFfBF+LjHLtUfV3hTLkfgE8EjFsJaeU2icA2Hg+M50=
+github.com/IBM/secrets-manager-go-sdk v1.2.0/go.mod h1:qv+tQg8Z3Vb11DQYxDjEGeROHDtTLQxUWuOIrIdWg6E=
+github.com/IBM/secrets-manager-go-sdk/v2 v2.0.0 h1:Lx4Bvim/MfoHEYR+n312bty5DirAJypBGGS9YZo3zCw=
+github.com/IBM/secrets-manager-go-sdk/v2 v2.0.0/go.mod h1:jagqWmjZ0zUEqh5jdGB42ApSQS40fu2LWw6pdg8JJko=
 github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=

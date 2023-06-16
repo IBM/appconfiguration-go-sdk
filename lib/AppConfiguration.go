@@ -23,7 +23,7 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1"
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
 )
 
 // AppConfiguration : Struct having init and configInstance.
@@ -80,7 +80,6 @@ func GetInstance() *AppConfiguration {
 // Example: AppConfiguration.OverrideServiceUrl("https://testurl.com")
 //
 // NOTE: To be used for development purposes only.
-//
 func OverrideServiceUrl(url string) {
 	overrideServiceUrl = url
 }
@@ -89,7 +88,7 @@ func OverrideServiceUrl(url string) {
 // by using a private endpoint that is accessible only through the IBM Cloud private network.
 // Be default, it is set to false.
 //
-//NOTE: This method must be called before calling the `Init` function on the SDK.
+// NOTE: This method must be called before calling the `Init` function on the SDK.
 func (ac *AppConfiguration) UsePrivateEndpoint(usePrivateEndpointParam bool) {
 	usePrivateEndpoint = usePrivateEndpointParam
 }
@@ -213,10 +212,10 @@ func (ac *AppConfiguration) GetProperties() (map[string]models.Property, error) 
 }
 
 // GetSecret : Get Secret
-func (ac *AppConfiguration) GetSecret(propertyID string, secretMangerObject *sm.SecretsManagerV1) (models.SecretProperty, error) {
+func (ac *AppConfiguration) GetSecret(propertyID string, secretsManagerService *sm.SecretsManagerV2) (models.SecretProperty, error) {
 	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
-		if secretMangerObject != nil {
-			return ac.configurationHandlerInstance.getSecret(propertyID, secretMangerObject)
+		if secretsManagerService != nil {
+			return ac.configurationHandlerInstance.getSecret(propertyID, secretsManagerService)
 		} else {
 			log.Error(messages.InvalidSecretManagerMessage)
 			return models.SecretProperty{}, errors.New("error: " + messages.InvalidSecretManagerMessage)

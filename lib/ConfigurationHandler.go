@@ -31,7 +31,7 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/IBM/go-sdk-core/v5/core"
-	sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1"
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
 	"github.com/gorilla/websocket"
 )
 
@@ -308,13 +308,13 @@ func (ch *ConfigurationHandler) getProperty(propertyID string) (models.Property,
 }
 
 // GetSecret : Get Secret
-func (ch *ConfigurationHandler) getSecret(propertyID string, secretMangerObject *sm.SecretsManagerV1) (models.SecretProperty, error) {
+func (ch *ConfigurationHandler) getSecret(propertyID string, secretsManagerService *sm.SecretsManagerV2) (models.SecretProperty, error) {
 	property, err := ch.getProperty(propertyID)
 	if err != nil {
 		return models.SecretProperty{}, err
 	}
 	if property.GetPropertyDataType() == "SECRETREF" {
-		ch.cache.SecretManagerMap[propertyID] = secretMangerObject
+		ch.cache.SecretManagerMap[propertyID] = secretsManagerService
 		return models.SecretProperty{PropertyID: propertyID}, nil
 	}
 	log.Error("Invalid operation: GetSecret() cannot be called on a ", property.GetPropertyDataType(), " property.")

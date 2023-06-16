@@ -22,7 +22,7 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/IBM/go-sdk-core/v5/core"
-	sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1"
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
 )
 
 // SecretProperty : SecretProperty struct
@@ -41,7 +41,7 @@ type SecretProperty struct {
 // entityAttributes is a map of type `map[string]interface{}` consisting of the attribute name and their values that defines the specified entity.
 // This is an optional parameter if the property is not configured with any targeting definition.
 // If the targeting is configured, then entityAttributes should be provided for the rule evaluation.
-func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) (result *sm.GetSecret, response *core.DetailedResponse, err error) {
+func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) (result sm.SecretIntf, response *core.DetailedResponse, err error) {
 
 	if len(entityID) <= 0 {
 		log.Error("SecretProperty evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
@@ -54,15 +54,6 @@ func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...m
 	}
 
 	propertyObject := GetCacheInstance().PropertyMap[sp.PropertyID]
-	propertySecretValue := propertyObject.GetValue().(map[string]interface{})
-	var propertySecretType string
-	if secretTypeValue, secretTypeExist := propertySecretValue["secret_type"]; secretTypeExist {
-		propertySecretType = secretTypeValue.(string)
-	} else {
-		//secret_type does not exist then throw error
-		log.Error("SecretProperty evaluation: secret_type is missing from the Property value of:", propertyObject.GetPropertyName())
-		return nil, nil, errors.New("error: secret_type is missing from the Property value of :" + propertyObject.GetPropertyName())
-	}
 
 	var propertyCurrentVal interface{}
 	if entityAttributes == nil {
@@ -83,12 +74,11 @@ func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...m
 	if secretID, secretIDExist := valMap["id"]; secretIDExist {
 		id := secretID.(string)
 		//sm sdk call
-		secretManager := GetCacheInstance().SecretManagerMap[sp.PropertyID].(*sm.SecretsManagerV1)
-		secretData, detailedResp, err := secretManager.GetSecret(&sm.GetSecretOptions{
-			SecretType: core.StringPtr(propertySecretType),
-			ID:         &id,
-		})
-
+		secretsManagerService := GetCacheInstance().SecretManagerMap[sp.PropertyID].(*sm.SecretsManagerV2)
+		getSecretOptions := secretsManagerService.NewGetSecretOptions(
+			id,
+		)
+		secretData, detailedResp, err := secretsManagerService.GetSecret(getSecretOptions)
 		if err != nil {
 			return nil, nil, err
 		}
