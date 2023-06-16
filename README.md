@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.3.3
+# IBM Cloud App Configuration Go server SDK 0.4.0
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -246,11 +246,14 @@ propertyVal := property.GetCurrentValue(entityId, entityAttributes)
 ## Get secret property
 
 ```go
-secretPropertyObject, err := appConfiguration.GetSecret(propertyID, secretsManagerObject)
+secretPropertyObject, err := appConfigClient.GetSecret(propertyID, secretsManagerService)
 ```
 
-* propertyID: propertyID is the unique string identifier, using this we will be able to fetch the property which will provide the necessary data to fetch the secret.
-* secretsManagerObject: secretsManagerObject is an Secret Manager variable or object which will be used for getting the secrets during the secret property evaluation. How to create a secret manager object refer the secret manager docs:https://cloud.ibm.com/apidocs/secrets-manager?code=go
+* propertyID: propertyID is the unique string identifier, using this we will be able to fetch the property which will
+  provide the necessary metadata to fetch the secret.
+* secretsManagerService: an initialised secrets manager client, which will be used for getting the secret data during
+  the secret property evaluation. Create a secret manager client by referring the
+  doc: https://cloud.ibm.com/apidocs/secrets-manager/secrets-manager-v2?code=go#authentication
 
 ## Evaluate a secret property
 
@@ -264,6 +267,7 @@ entityAttributes["city"] = "Bangalore"
 entityAttributes["country"] = "India"
 
 getSecretRes, detailedResponse, err := secretPropertyObject.GetCurrentValue(entityId, entityAttributes)
+// See below to know how to access the secret data from the detailedResponse
 ```
 
 * entityId: entityId is a string identifier related to the Entity against which the property will be evaluated. For
@@ -276,22 +280,41 @@ getSecretRes, detailedResponse, err := secretPropertyObject.GetCurrentValue(enti
   evaluation. An attribute is a parameter that is used to define a segment. The SDK uses the attribute values to
   determine if the specified entity satisfies the targeting rules, and returns the appropriate value.
 
-## How to access the payload secret data from the response
-```go
-//make sure this import statement is added
-import (sm "github.com/IBM/secrets-manager-go-sdk/secretsmanagerv1")
+## How to access the secret data from a successful response
 
-secret := getSecretRes.Resources[0].(*sm.SecretResource)
-secretData := secret.SecretData.(map[string]interface{})
-payload := secretData["payload"]
+Full example :
+```go
+import (
+    "github.com/IBM/go-sdk-core/v5/core"
+    sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+)
+
+secretsManagerService, err := sm.NewSecretsManagerV2(&sm.SecretsManagerV2Options{
+    URL: "<SECRETS_MANAGER_INSTANCE_URL>",
+    Authenticator: &core.IamAuthenticator{
+        ApiKey: "<SECRETS_MANAGER_APIKEY>",
+    },
+})
+secretPropertyObject, err := appConfigClient.GetSecret(propertyID, secretsManagerService)
+getSecretRes, detailedResponse, err := secretPropertyObject.GetCurrentValue(entityId, entityAttributes)
+
+// For Arbitrary secret type
+secretData := *detailedResponse.Result.(*sm.ArbitrarySecret).Payload
+
+// For username-password secret type
+secretData := *detailedResponse.Result.(*sm.UsernamePasswordSecret).Username
+secretData := *detailedResponse.Result.(*sm.UsernamePasswordSecret).Password
+
+// For key-value secret type
+secretData := detailedResponse.Result.(*sm.KVSecret).Data["key1"]
+secretData := detailedResponse.Result.(*sm.KVSecret).Data["key2"]
 ```
 
 The GetCurrentValue will be sending the 3 objects as part of response. 
 
-* getSecretRes:  this will give the meta data and payload.
+* getSecretRes: this will give the meta data and payload.
 * detailedResponse: this will give entire data which includes the http response header data, meta data and payload.
 * err: this will give the error response if the request is invalid or failed for some reason.
-> Note: `secretData["payload"] will return interface{}` so based on the data we need to do the type casting.
 
 ## Fetching the appConfigClient across other modules
 
