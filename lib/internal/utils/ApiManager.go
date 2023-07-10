@@ -48,12 +48,12 @@ func GetAPIManagerInstance() *APIManager {
 }
 
 // Request : wrapper over core base service request method.
-func (ap *APIManager) Request(builder *core.RequestBuilder) *core.DetailedResponse {
+func (ap *APIManager) Request(builder *core.RequestBuilder) (*core.DetailedResponse, error) {
 	request, err := builder.Build()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	var rawResponse map[string]json.RawMessage
-	response, _ := ap.baseService.Request(request, &rawResponse)
-	return response
+	response, err := ap.baseService.Request(request, &rawResponse)
+	return response, err
 }

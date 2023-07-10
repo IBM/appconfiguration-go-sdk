@@ -61,7 +61,7 @@ func getTypeCastedValue(val interface{}, valType string, valFormat string) inter
 			}
 			return val
 		} else {
-			log.Error(messages.InvalidDataFormat)
+			log.Error(messages.InvalidDataFormat, valFormat)
 			return nil
 		}
 	} else {

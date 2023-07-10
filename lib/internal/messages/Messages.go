@@ -47,16 +47,16 @@ const IncorrectUsageOfContextOptions = "Incorrect usage of context options. At m
 const IncorrectUsageOfEntityAttributes = "Incorrect usage of entityAttributes in "
 
 // ConfigAPIError : ConfigAPIError const
-const ConfigAPIError = "Failed to fetch the configurations"
+const ConfigAPIError = "Failed to fetch the configurations. "
 
 // FetchFromAPISdkInitError : FetchFromAPISdkInitError const
 const FetchFromAPISdkInitError = "fetchFromAPI() - Configuration SDK not initialized with call to init."
 
 // WebsocketErrorReadingMessage : WebsocketErrorReadingMessage const
-const WebsocketErrorReadingMessage = "Error while reading message from the socket."
+const WebsocketErrorReadingMessage = "Error while reading message from the socket. "
 
 // WebsocketReceivingMessage : WebsocketReceivingMessage const
-const WebsocketReceivingMessage = "Message received from socket."
+const WebsocketReceivingMessage = "Message received from socket. "
 
 // ConfigurationUpdateListenerMethodError : ConfigurationUpdateListenerMethodError const
 const ConfigurationUpdateListenerMethodError = "Configuration update listener should me a method or a function."
@@ -77,7 +77,7 @@ const ParsingFeatureRules = "Parsing feature rules."
 const EvaluatingSegments = "Evaluating segments."
 
 // FeatureValue : FeatureValue const
-const FeatureValue = "Feature value."
+const FeatureValue = "Feature value is "
 
 // EvaluatingFeature : EvaluatingFeature const
 const EvaluatingFeature = "Evaluating feature."
@@ -98,7 +98,7 @@ const ErrorInvalidFeatureAction = "error : feature object not initialized"
 const ParsingPropertyRules = "Parsing property rules."
 
 // PropertyValue : PropertyValue const
-const PropertyValue = "Property value."
+const PropertyValue = "Property value is "
 
 // EvaluatingProperty : EvaluatingProperty const
 const EvaluatingProperty = "Evaluating property."
@@ -182,7 +182,7 @@ const LoadingData = "Loading data."
 const CheckBootstrapFileProvided = "Checking bootstrap file is provided by the user or not."
 
 // BootstrapFileProvided : BootstrapFileProvided const
-const BootstrapFileProvided = "User provided bootstrap file."
+const BootstrapFileProvided = "User provided bootstrap file. "
 
 // LoadingConfigurations : LoadingConfigurations const
 const LoadingConfigurations = "Loading configurations."
@@ -230,7 +230,7 @@ const InitError = "error: configurations not fetched, check the init and setcont
 const InvalidDataType = "Invalid datatype: "
 
 // InvalidDataFormat : Invalid Data Format
-const InvalidDataFormat = "Invalid data format"
+const InvalidDataFormat = "Invalid data format: "
 
 // TypeCastingError : Type Casting Error
 const TypeCastingError = "Error Type casting. Check the feature or property values."
@@ -248,13 +248,13 @@ const WebSocketConnectFailed = "Socket connect failed. "
 const AuthTokenError = "Invalid API Key is provided. Could not generate Bearer token for the provided API Key."
 
 // RetryScheduledMessage : RetryScheduledMessage const
-const RetryScheduledMessage = "Scheduled the API request to retry after 10 minutes."
+const RetryScheduledMessage = "Failed to fetch the configurations due to server error. Scheduled the API request to retry after 10 minutes."
 
-//InvalidPropertyValueMessage : InvalidPropertyValueMessage const
+// InvalidPropertyValueMessage : InvalidPropertyValueMessage const
 const InvalidPropertyValueMessage = "Property Value is either invalid or empty."
 
-//InvalidSecretManagerMessage : InvalidSecretManagerMessage const
+// InvalidSecretManagerMessage : InvalidSecretManagerMessage const
 const InvalidSecretManagerMessage = "Secret Manager object is either invalid or empty."
 
-//InvalidSecretID : InvalidSecretIdMessage const
+// InvalidSecretID : InvalidSecretIdMessage const
 const InvalidSecretID = "Secret Id is either invalid or empty."

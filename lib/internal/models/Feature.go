@@ -132,6 +132,7 @@ func (f *Feature) GetCurrentValue(entityID string, entityAttributes ...map[strin
 		val, _ := f.featureEvaluation(entityID, temp)
 		return getTypeCastedValue(val, f.GetFeatureDataType(), f.GetFeatureDataFormat())
 	}
+	log.Error("Invalid feature flag. Feature struct has empty values for required fields.")
 	return nil
 }
 

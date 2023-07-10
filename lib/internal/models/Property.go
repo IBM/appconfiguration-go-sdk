@@ -107,7 +107,7 @@ func (p *Property) GetCurrentValue(entityID string, entityAttributes ...map[stri
 		val := p.propertyEvaluation(entityID, temp)
 		return getTypeCastedValue(val, p.GetPropertyDataType(), p.GetPropertyDataFormat())
 	}
-	log.Error("Invalid property")
+	log.Error("Invalid property. Property struct has empty values for required fields.")
 	return nil
 }
 
@@ -144,12 +144,10 @@ func (p *Property) propertyEvaluation(entityID string, entityAttributes map[stri
 					if p.evaluateSegment(string(segmentKey), entityAttributes) {
 						evaluatedSegmentID = segmentKey
 						if segmentRule.GetValue() == "$default" {
-							log.Debug(messages.PropertyValue)
-							log.Debug(p.GetValue())
+							log.Debug(messages.PropertyValue, p.GetValue())
 							return p.GetValue()
 						}
-						log.Debug(messages.PropertyValue)
-						log.Debug(segmentRule.GetValue())
+						log.Debug(messages.PropertyValue, segmentRule.GetValue())
 						return segmentRule.GetValue()
 					}
 				}

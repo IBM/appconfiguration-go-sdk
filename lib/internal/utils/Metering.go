@@ -309,15 +309,15 @@ func (mt *Metering) sendToServer(guid string, collectionUsages CollectionUsages)
 	if err != nil {
 		return
 	}
-	response := GetAPIManagerInstance().Request(builder)
+	response, err := GetAPIManagerInstance().Request(builder)
 	if response != nil && response.StatusCode == constants.StatusCodeAccepted {
 		log.Debug(messages.SendMeteringSuccess)
 	} else {
 		// [first] Log the accurate reason
 		if response != nil {
-			log.Error(messages.SendMeteringServerErr, response.Result)
+			log.Error(messages.SendMeteringServerErr, response.Result, err)
 		} else {
-			log.Error(messages.SendMeteringServerErr)
+			log.Error(messages.SendMeteringServerErr, err)
 		}
 		// [then] schedule a function to send the same payload after 10 minutes
 		if response.StatusCode == constants.StatusCodeTooManyRequests || (response.StatusCode >= constants.StatusCodeServerErrorBegin && response.StatusCode <= constants.StatusCodeServerErrorEnd) {
