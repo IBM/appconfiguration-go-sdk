@@ -103,7 +103,7 @@ func (ch *ConfigurationHandler) loadData() {
 		}
 	}
 	if len(ch.bootstrapFile) > 0 {
-		log.Debug(messages.BootstrapFileProvided)
+		log.Info(messages.BootstrapFileProvided, "file path is:", ch.bootstrapFile)
 		if len(ch.persistentCacheDirectory) > 0 {
 			if bytes.Equal(ch.persistentData, []byte(`{}`)) {
 				bootstrapFileData := utils.ReadFiles(utils.SanitizePath(ch.bootstrapFile))
@@ -177,6 +177,7 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		}
 		_, err := builder.ResolveRequestURL(ch.urlBuilder.GetBaseServiceURL(), `/apprapp/feature/v1/instances/{guid}/collections/{collection_id}/config`, pathParamsMap)
 		if err != nil {
+			log.Error(err)
 			return
 		}
 		builder.AddHeader("Accept", "application/json")
@@ -198,7 +199,7 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		//
 		// Both the cases [429 & 5xx] we schedule a retry after 10 minutes.
 
-		response := utils.GetAPIManagerInstance().Request(builder)
+		response, err := utils.GetAPIManagerInstance().Request(builder)
 		if response != nil && response.StatusCode == constants.StatusCodeOK {
 			log.Debug(messages.FetchAPISuccessful)
 			jsonData, _ := json.Marshal(response.Result)
@@ -211,9 +212,9 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		} else {
 			if response != nil {
 				if response.Result != nil {
-					log.Error(response.Result)
+					log.Error(response.Result, err)
 				} else {
-					log.Error(string(response.RawResult))
+					log.Error(string(response.RawResult), err)
 				}
 				if response.StatusCode == constants.StatusCodeTooManyRequests || (response.StatusCode >= constants.StatusCodeServerErrorBegin && response.StatusCode <= constants.StatusCodeServerErrorEnd) {
 					time.AfterFunc(time.Second*time.Duration(ch.retryInterval), func() {
@@ -222,7 +223,7 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 					log.Info(messages.RetryScheduledMessage)
 				}
 			} else {
-				log.Error(messages.ConfigAPIError)
+				log.Error(messages.ConfigAPIError, err)
 			}
 		}
 	} else {
@@ -247,6 +248,13 @@ func (ch *ConfigurationHandler) startWebSocket() {
 	if err != nil {
 		if ch.socketConnectionResponse != nil {
 			log.Error(messages.WebSocketConnectErr, err, ch.socketConnectionResponse.StatusCode)
+			// websocket dial that fails with response status code in between 400-499, except 429, are not retried as failure is due to client side error
+			socketConnectRespStatusCode := ch.socketConnectionResponse.StatusCode
+			if socketConnectRespStatusCode >= constants.StatusCodeClientErrorBegin &&
+				socketConnectRespStatusCode <= constants.StatusCodeClientErrorEnd &&
+				socketConnectRespStatusCode != constants.StatusCodeTooManyRequests {
+				return
+			}
 		}
 		go ch.startWebSocket()
 		return

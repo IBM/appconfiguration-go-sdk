@@ -217,7 +217,7 @@ func (ac *AppConfiguration) GetSecret(propertyID string, secretsManagerService *
 		if secretsManagerService != nil {
 			return ac.configurationHandlerInstance.getSecret(propertyID, secretsManagerService)
 		} else {
-			log.Error(messages.InvalidSecretManagerMessage)
+			log.Error(messages.InvalidSecretManagerMessage, secretsManagerService)
 			return models.SecretProperty{}, errors.New("error: " + messages.InvalidSecretManagerMessage)
 		}
 	}

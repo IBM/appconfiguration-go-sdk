@@ -272,7 +272,7 @@ func TestSendToServer(t *testing.T) {
 	}
 	urlBuilderInstance.SetAuthenticator(&core.NoAuthAuthenticator{})
 	m.sendToServer("guid", guidMap["guid"][0])
-	if hook.LastEntry().Message != "AppConfiguration - Error while sending metering data to server <nil>" {
+	if hook.LastEntry().Message != "AppConfiguration - Error while sending metering data to server <nil> Internal Server Error" {
 		t.Errorf("Test failed: Incorrect error message -->")
 	}
 	resetMeteringInstance()
