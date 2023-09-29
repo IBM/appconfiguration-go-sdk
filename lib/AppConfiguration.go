@@ -18,12 +18,11 @@ package lib
 
 import (
 	"errors"
-	"os"
-
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+	"path/filepath"
 )
 
 // AppConfiguration : Struct having init and configInstance.
@@ -37,7 +36,6 @@ type AppConfiguration struct {
 type ContextOptions struct {
 	PersistentCacheDirectory string
 	BootstrapFile            string
-	ConfigurationFile        string
 	LiveConfigUpdateEnabled  bool
 }
 
@@ -60,10 +58,6 @@ const REGION_AU_SYD = "au-syd"
 
 // REGION_US_EAST : Washington DC Region
 const REGION_US_EAST = "us-east"
-
-func init() {
-	log.SetLogLevel("info")
-}
 
 // GetInstance : Get App Configuration Instance
 func GetInstance() *AppConfiguration {
@@ -134,9 +128,9 @@ func (ac *AppConfiguration) SetContext(collectionID string, environmentID string
 		})
 	case 1:
 		var temp = options[0]
-		if len(temp.ConfigurationFile) > 0 && len(temp.BootstrapFile) == 0 {
-			temp.BootstrapFile = temp.ConfigurationFile
-			log.Info(messages.ContextOptionsParameterDeprecation)
+		if len(temp.BootstrapFile) > 0 && filepath.Ext(temp.BootstrapFile) != ".json" {
+			log.Error(messages.InvalidBootstrapFile, " - ", temp.BootstrapFile)
+			return
 		}
 		if !temp.LiveConfigUpdateEnabled && len(temp.BootstrapFile) == 0 {
 			log.Error(messages.BootstrapFileNotFoundError)
@@ -228,10 +222,8 @@ func (ac *AppConfiguration) GetSecret(propertyID string, secretsManagerService *
 // EnableDebug : Enable Debug
 func (ac *AppConfiguration) EnableDebug(enabled bool) {
 	if enabled {
-		os.Setenv("ENABLE_DEBUG", "true")
 		log.SetLogLevel("debug")
 	} else {
-		os.Setenv("ENABLE_DEBUG", "false")
 		log.SetLogLevel("info")
 	}
 }

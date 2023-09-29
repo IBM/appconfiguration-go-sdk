@@ -3,8 +3,8 @@ module github.com/IBM/appconfiguration-go-sdk
 go 1.16
 
 require (
-	github.com/IBM/go-sdk-core/v5 v5.13.4
-	github.com/IBM/secrets-manager-go-sdk/v2 v2.0.0
+	github.com/IBM/go-sdk-core/v5 v5.14.1
+	github.com/IBM/secrets-manager-go-sdk/v2 v2.0.1
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/gorilla/websocket v1.5.0
 	github.com/robfig/cron v1.2.0

@@ -16,22 +16,15 @@
 package log
 
 import (
-	"os"
-	"strings"
-
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 var logger *logrus.Logger
 
 func init() {
 	logger = logrus.New()
-	if os.Getenv("ENABLE_DEBUG") == "true" {
-		SetLogLevel("debug")
-	} else {
-		SetLogLevel("info")
-	}
-
+	SetLogLevel("info")
 }
 func GetLogger() *logrus.Logger {
 	return logger

@@ -17,8 +17,6 @@
 package models
 
 import (
-	"os"
-
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
@@ -32,15 +30,6 @@ type Cache struct {
 
 // CacheInstance : Cache Instance
 var CacheInstance *Cache
-
-// Init : init
-func init() {
-	if os.Getenv("ENABLE_DEBUG") == "true" {
-		log.SetLogLevel("debug")
-	} else {
-		log.SetLogLevel("info")
-	}
-}
 
 // SetCache : Set Cache
 func SetCache(featureMap map[string]Feature, propertyMap map[string]Property, segmentMap map[string]Segment) {

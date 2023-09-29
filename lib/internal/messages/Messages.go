@@ -40,6 +40,9 @@ const CollectionInitError = "Invalid action. You can perform this action only af
 // BootstrapFileNotFoundError : BootstrapFileNotFoundError const
 const BootstrapFileNotFoundError = "Provide bootstrap_file value when live_config_update_enabled is false."
 
+// InvalidBootstrapFile : InvalidBootstrapFile const
+const InvalidBootstrapFile = "Invalid value provided for BootstrapFile parameter"
+
 // IncorrectUsageOfContextOptions : IncorrectUsageOfContextOptions const
 const IncorrectUsageOfContextOptions = "Incorrect usage of context options. At most of one ContextOptions struct should be passed."
 
@@ -161,7 +164,7 @@ const SendMeteringServer = "Sending to metering server."
 const SendMeteringSuccess = "Successfully sent metering data to server."
 
 // SendMeteringServerErr : SendMeteringServerErr const
-const SendMeteringServerErr = "Error while sending metering data to server "
+const SendMeteringServerErr = "Error while sending metering data to server. "
 
 // RetrieveingAppConfig : RetrieveingAppConfig const
 const RetrieveingAppConfig = "Retrieving App Configuration instance."
@@ -178,11 +181,14 @@ const SettingContext = "Setting context."
 // LoadingData : LoadingData const
 const LoadingData = "Loading data."
 
+// ReadPersistentCache : ReadPersistentCache const
+const ReadPersistentCache = "Reading configurations from persistent cache: "
+
 // CheckBootstrapFileProvided : CheckBootstrapFileProvided const
 const CheckBootstrapFileProvided = "Checking bootstrap file is provided by the user or not."
 
-// BootstrapFileProvided : BootstrapFileProvided const
-const BootstrapFileProvided = "User provided bootstrap file. "
+// ReadBootstrapConfigurations : ReadBootstrapConfigurations const
+const ReadBootstrapConfigurations = "Reading configurations from bootstrap file: "
 
 // LoadingConfigurations : LoadingConfigurations const
 const LoadingConfigurations = "Loading configurations."
@@ -203,7 +209,7 @@ const FetchFromAPI = "Fetching from API."
 const StartWebSocket = "Starting web socket connection."
 
 // WebSocketConnectErr : WebSocketConnectErr const
-const WebSocketConnectErr = "Error connecting to server "
+const WebSocketConnectErr = "Error occurred while establishing websocket connection with the App Configuration server. "
 
 // RetryWebSocketConnect : RetryWebSocketConnect const
 const RetryWebSocketConnect = "Trying web socket connection again."
@@ -235,9 +241,6 @@ const InvalidDataFormat = "Invalid data format: "
 // TypeCastingError : Type Casting Error
 const TypeCastingError = "Error Type casting. Check the feature or property values."
 
-// ContextOptionsParameterDeprecation = Deprecation message
-const ContextOptionsParameterDeprecation = "Deprecated: With v0.2.1 onwards, the ConfigurationFile parameter of SetContext method has been deprecated.\nUse BootstrapFile parameter instead."
-
 // FetchAPISuccessful : FetchAPISuccessful const
 const FetchAPISuccessful = "Successfully fetched the configurations."
 
@@ -245,10 +248,10 @@ const FetchAPISuccessful = "Successfully fetched the configurations."
 const WebSocketConnectFailed = "Socket connect failed. "
 
 // AuthTokenError : AuthTokenError const
-const AuthTokenError = "Invalid API Key is provided. Could not generate Bearer token for the provided API Key."
+const AuthTokenError = "Could not generate Bearer token for the provided API Key."
 
 // RetryScheduledMessage : RetryScheduledMessage const
-const RetryScheduledMessage = "Failed to fetch the configurations due to server error. Scheduled the API request to retry after 10 minutes."
+const RetryScheduledMessage = "Failed to fetch the configurations due to server error. Scheduled the API request to retry after %d minutes."
 
 // InvalidPropertyValueMessage : InvalidPropertyValueMessage const
 const InvalidPropertyValueMessage = "Property Value is either invalid or empty."
