@@ -310,17 +310,18 @@ func (mt *Metering) sendToServer(guid string, collectionUsages CollectionUsages)
 		return
 	}
 	response, err := GetAPIManagerInstance().Request(builder)
-	if response != nil && response.StatusCode == constants.StatusCodeAccepted {
+	if response != nil && response.StatusCode == 202 {
 		log.Debug(messages.SendMeteringSuccess)
 	} else {
 		// [first] Log the accurate reason
 		if response != nil {
-			log.Error(messages.SendMeteringServerErr, response.Result, err)
+			log.Error(messages.SendMeteringServerErr + err.Error())
 		} else {
-			log.Error(messages.SendMeteringServerErr, err)
+			log.Error(messages.SendMeteringServerErr + err.Error())
 		}
 		// [then] schedule a function to send the same payload after 10 minutes
-		if response.StatusCode == constants.StatusCodeTooManyRequests || (response.StatusCode >= constants.StatusCodeServerErrorBegin && response.StatusCode <= constants.StatusCodeServerErrorEnd) {
+		statusCode := response.StatusCode
+		if statusCode == 429 || (statusCode >= 500 && statusCode <= 599) {
 			minutes, _ := time.ParseDuration(SendInterval)
 			time.AfterFunc(time.Second*time.Duration(minutes.Seconds()), func() {
 				mt.sendToServer(guid, collectionUsages)

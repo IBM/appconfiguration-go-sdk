@@ -18,14 +18,14 @@ package models
 
 // RuleElem : RuleElem struct
 type RuleElem struct {
-	Segments []string
+	Segments []string `json:"segments"`
 }
 
 // SegmentRule : SegmentRule struct
 type SegmentRule struct {
-	Rules             []RuleElem
-	Value             interface{}
-	Order             int
+	Rules             []RuleElem   `json:"rules"`
+	Value             interface{}  `json:"value"`
+	Order             int          `json:"order"`
 	RolloutPercentage *interface{} `json:"rollout_percentage"`
 }
 

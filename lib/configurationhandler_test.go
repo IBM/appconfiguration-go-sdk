@@ -64,14 +64,14 @@ func TestConfigHandlerSetContext(t *testing.T) {
 func TestSaveCache(t *testing.T) {
 	// test save feature when empty data is passed.
 	ch := GetConfigurationHandlerInstance()
-	data := `{"Features":null,"Properties":null,"Collection":{"name":"","collection_id":""},"Segments":null}`
+	data := `{"features":null,"properties":null,"segments":null}`
 	ch.saveInCache([]byte(data))
 	assert.Equal(t, 0, len(ch.cache.FeatureMap))
 	assert.Equal(t, 0, len(ch.cache.PropertyMap))
 	assert.Equal(t, 0, len(ch.cache.SegmentMap))
 
 	// test save feature when non-empty data is passed.
-	data = `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true, "rollout_percentage": 95}],"properties":[{"name":"p1","property_id":"p1","tags":"","type":"BOOLEAN","value":false,"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	data = `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true, "rollout_percentage": 95}],"properties":[{"name":"p1","property_id":"p1","tags":"","type":"BOOLEAN","value":false,"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
 	ch.saveInCache([]byte(data))
 	assert.Equal(t, 1, len(ch.cache.FeatureMap))
 	assert.Equal(t, 1, len(ch.cache.PropertyMap))
@@ -86,7 +86,7 @@ func TestFetchApi(t *testing.T) {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-type", "application/json")
 			w.WriteHeader(200)
-			fmt.Fprintf(w, "%s", `{ "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [], "created_time": "2021-05-26T06:23:18Z", "updated_time": "2021-06-08T03:38:38Z", "evaluation_time": "2021-06-03T10:08:46Z" } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`)
+			fmt.Fprintf(w, "%s", `{ "environments": [ { "name": "Dev", "environment_id": "dev", "description": "Environment created on instance creation", "tags": "", "color_code": "#FDD13A", "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [] } ] } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`)
 		}))
 
 	ch := GetConfigurationHandlerInstance()
@@ -134,7 +134,7 @@ func TestFetchApi(t *testing.T) {
 func TestUpdateCacheAndListener(t *testing.T) {
 	mockLogger()
 	// valid data but no listener method provided
-	data := `{ "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [], "created_time": "2021-05-26T06:23:18Z", "updated_time": "2021-06-08T03:38:38Z", "evaluation_time": "2021-06-03T10:08:46Z" } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`
+	data := `{ "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [] } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`
 	ch := GetConfigurationHandlerInstance()
 	ch.Init("us-south", "abc", "abc", false)
 	ch.updateCacheAndListener([]byte(data))
@@ -218,7 +218,7 @@ func TestStartWebSocket(t *testing.T) {
 	server2 := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-type", "application/json")
 		res.WriteHeader(200)
-		fmt.Fprintf(res, "%s", `{ "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [], "created_time": "2021-05-26T06:23:18Z", "updated_time": "2021-06-08T03:38:38Z", "evaluation_time": "2021-06-03T10:08:46Z" } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`)
+		fmt.Fprintf(res, "%s", `{ "environments": [ { "name": "Dev", "environment_id": "dev", "description": "Environment created on instance creation", "tags": "", "color_code": "#FDD13A", "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [], } ] } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`)
 	}))
 
 	webSocketURL := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -238,7 +238,7 @@ func TestStartWebSocket(t *testing.T) {
 	ch.liveConfigUpdateEnabled = true
 	ch.isInitialized = true
 	ch.startWebSocket()
-	if hook.LastEntry().Message != "AppConfiguration - Socket connect failed. Invalid API Key is provided. Could not generate Bearer token for the provided API Key." {
+	if hook.LastEntry().Message != "AppConfiguration - Socket connect failed. Could not generate Bearer token for the provided API Key." {
 		t.Errorf("Test failed: Incorrect error message")
 	}
 	resetConfigurationHandler(ch)
@@ -248,7 +248,7 @@ func TestStartWebSocket(t *testing.T) {
 func TestConfigHandlerGetProperty(t *testing.T) {
 	// when property id exists in the cache
 	ch := GetConfigurationHandlerInstance()
-	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":90}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":90}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
 	ch.saveInCache([]byte(data))
 	val, _ := ch.getProperty("show-ad")
 	assert.Equal(t, "ShowAd", val.Name)
@@ -270,7 +270,7 @@ func TestConfigHandlerGetProperty(t *testing.T) {
 func TestConfigHandlerGetProperties(t *testing.T) {
 	// when property id exists in the cache
 	ch := GetConfigurationHandlerInstance()
-	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":85}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":85}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
 	ch.saveInCache([]byte(data))
 	val, _ := ch.getProperties()
 	assert.Equal(t, "ShowAd", val["show-ad"].Name)
@@ -286,7 +286,7 @@ func TestConfigHandlerGetSecret(t *testing.T) {
 	// when property id exists in the cache
 	ch := GetConfigurationHandlerInstance()
 	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":90}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"SECRETREF","value":{"sm_instance_crn": "crn:v1:staging:public:secrets-manager:eu-gb:a/3268cfe9e25d4146a03b31f22f9a731a:d614a8ba-a13a-41cc-9e18-8fbff3ad9845::",
-    "secret_type": "username_password"},"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+    "secret_type": "username_password"},"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
 	ch.saveInCache([]byte(data))
 	_, err := ch.getProperty("show-ad1")
 	if err == nil {
@@ -310,10 +310,7 @@ func TestConfigHandlerGetSecret(t *testing.T) {
 			"tags": "",
 			"type": "BOOLEAN",
 			"value": false,
-			"segment_rules": [],
-			"created_time": "2021-05-26T06:23:18Z",
-			"updated_time": "2021-06-08T03:38:38Z",
-			"evaluation_time": "2021-06-03T10:08:46Z"
+			"segment_rules": []
 		}],
 		"segments": [{
 			"name": "beta-users",
@@ -344,7 +341,7 @@ func TestConfigHandlerGetSecret(t *testing.T) {
 func TestConfigHandlerGetFeature(t *testing.T) {
 	// when property id exists in the cache
 	ch := GetConfigurationHandlerInstance()
-	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":70}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":70}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
 	ch.saveInCache([]byte(data))
 	val, _ := ch.getFeature("cycle-rentals8")
 	assert.Equal(t, "Cycle Rentals8", val.Name)
@@ -355,7 +352,7 @@ func TestConfigHandlerGetFeature(t *testing.T) {
 	assert.Equal(t, "error : invalid feature id cycle-rentals9", fmt.Sprint(err))
 
 	// when cache is empty
-	data = `{"Features":null,"Properties":null,"Collection":{"name":"","collection_id":""},"Segments":null}`
+	data = `{"features":null,"properties":null,"segments":null}`
 	ch.saveInCache([]byte(data))
 	val, err = ch.getFeature("cycle-rentals8")
 	assert.Equal(t, "", val.Name)
@@ -365,7 +362,7 @@ func TestConfigHandlerGetFeature(t *testing.T) {
 func TestConfigHandlerGetFeatures(t *testing.T) {
 	// when property id exists in the cache
 	ch := GetConfigurationHandlerInstance()
-	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":75}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[],"created_time":"2021-05-26T06:23:18Z","updated_time":"2021-06-08T03:38:38Z","evaluation_time":"2021-06-03T10:08:46Z"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":75}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
 	ch.saveInCache([]byte(data))
 	val, _ := ch.getFeatures()
 	assert.Equal(t, "Cycle Rentals8", val["cycle-rentals8"].Name)

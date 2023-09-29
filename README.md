@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.4.2
+# IBM Cloud App Configuration Go server SDK 0.5.0
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -103,10 +103,6 @@ service across your application restarts, you can configure the SDK to work usin
 persistent cache to store the App Configuration data that will be available across your application restarts.
 
 ```go
-// 1. default (without persistent cache)
-appConfigClient.SetContext(collectionId, environmentId)
-
-// 2. optional (with persistent cache)
 appConfigClient.SetContext(collectionId, environmentId, AppConfiguration.ContextOptions{
     PersistentCacheDirectory: "/var/lib/docker/volumes/",
 })
@@ -135,9 +131,9 @@ appConfigClient.SetContext(collectionId, environmentId, AppConfiguration.Context
 ```
 
 * BootstrapFile: Absolute path of the JSON file, which contains configuration details. Make sure to provide a proper
-  JSON file. You can generate this file using `ibmcloud ac config` command of the IBM Cloud App Configuration CLI.
+  JSON file. You can generate this file using `ibmcloud ac export` command of the IBM Cloud App Configuration CLI.
 * LiveConfigUpdateEnabled: Live configuration update from the server. Set this value to `false` if the new configuration
-  values shouldn't be fetched from the server. By default, this value is enabled.
+  values shouldn't be fetched from the server. By default, this value is set to `true`.
 
 ## Get single feature
 

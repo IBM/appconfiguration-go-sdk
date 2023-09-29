@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"sync"
@@ -55,6 +56,7 @@ type ConfigurationHandler struct {
 	liveConfigUpdateEnabled     bool
 	persistentData              []byte
 	retryInterval               int64
+	scheduledRetry              *time.Timer
 	socketConnection            *websocket.Conn
 	socketConnectionResponse    *http.Response
 	mu                          sync.Mutex
@@ -89,35 +91,41 @@ func (ch *ConfigurationHandler) SetContext(collectionID, environmentID string, o
 	ch.bootstrapFile = options.BootstrapFile
 	ch.liveConfigUpdateEnabled = options.LiveConfigUpdateEnabled
 	ch.isInitialized = true
-	ch.retryInterval = 600
+	ch.retryInterval = 2 // two minutes
 }
 func (ch *ConfigurationHandler) loadData() {
-	if !ch.isInitialized {
-		log.Error(messages.ConfigurationHandlerInitError)
-	}
+	persistentCacheRead := false
+
 	if len(ch.persistentCacheDirectory) > 0 {
-		ch.persistentData = utils.ReadFiles(filepath.Join(utils.SanitizePath(ch.persistentCacheDirectory), constants.ConfigurationFile))
+		path := filepath.Join(utils.SanitizePath(ch.persistentCacheDirectory), constants.ConfigurationFile)
+		log.Info(messages.ReadPersistentCache, path)
+		ch.persistentData = utils.ReadFiles(path)
 		if !bytes.Equal(ch.persistentData, []byte(`{}`)) {
-			// no updating the listener here. Only updating cache is enough
-			ch.saveInCache(ch.persistentData)
+			configurations := models.ExtractConfigurationsFromPersistentCache(ch.persistentData)
+			if configurations != nil {
+				ch.saveInCache(configurations)
+				persistentCacheRead = true
+			}
 		}
 	}
 	if len(ch.bootstrapFile) > 0 {
-		log.Info(messages.BootstrapFileProvided, "file path is:", ch.bootstrapFile)
+		path := utils.SanitizePath(ch.bootstrapFile)
 		if len(ch.persistentCacheDirectory) > 0 {
-			if bytes.Equal(ch.persistentData, []byte(`{}`)) {
-				bootstrapFileData := utils.ReadFiles(utils.SanitizePath(ch.bootstrapFile))
-				go utils.StoreFiles(string(bootstrapFileData), ch.persistentCacheDirectory)
-				ch.updateCacheAndListener(bootstrapFileData)
-			} else {
-				// update the only listener here. Because, cache is already updated above (line 100)
-				if ch.configurationUpdateListener != nil {
-					ch.configurationUpdateListener()
+			if !persistentCacheRead {
+				bootstrapFileData := utils.ReadFiles(path)
+				bootstrapConfigurations := models.ExtractConfigurationsFromBootstrapJson(bootstrapFileData, ch.collectionID, ch.environmentID)
+				if bootstrapConfigurations != nil {
+					ch.saveInCache(bootstrapConfigurations)
+					go utils.StoreFiles(string(models.FormatConfig(bootstrapConfigurations, ch.environmentID)), ch.persistentCacheDirectory)
 				}
 			}
 		} else {
-			bootstrapFileData := utils.ReadFiles(utils.SanitizePath(ch.bootstrapFile))
-			ch.updateCacheAndListener(bootstrapFileData)
+			log.Info(messages.ReadBootstrapConfigurations, path)
+			bootstrapFileData := utils.ReadFiles(path)
+			bootstrapConfigurations := models.ExtractConfigurationsFromBootstrapJson(bootstrapFileData, ch.collectionID, ch.environmentID)
+			if bootstrapConfigurations != nil {
+				ch.saveInCache(bootstrapConfigurations)
+			}
 		}
 	}
 	if ch.liveConfigUpdateEnabled {
@@ -136,25 +144,25 @@ func (ch *ConfigurationHandler) FetchConfigurationData() {
 func (ch *ConfigurationHandler) saveInCache(data []byte) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
-	configResponse := models.ConfigResponse{}
-	err := json.Unmarshal(data, &configResponse)
+	configurations := models.Configurations{}
+	err := json.Unmarshal(data, &configurations)
 	if err != nil {
 		log.Error(messages.UnmarshalJSONErr, err)
 		return
 	}
-	log.Debug(configResponse)
+	log.Debug(configurations)
 	featureMap := make(map[string]models.Feature)
-	for _, feature := range configResponse.Features {
+	for _, feature := range configurations.Features {
 		featureMap[feature.GetFeatureID()] = feature
 	}
 
 	propertyMap := make(map[string]models.Property)
-	for _, property := range configResponse.Properties {
+	for _, property := range configurations.Properties {
 		propertyMap[property.GetPropertyID()] = property
 	}
 
 	segmentMap := make(map[string]models.Segment)
-	for _, segment := range configResponse.Segments {
+	for _, segment := range configurations.Segments {
 		segmentMap[segment.GetSegmentID()] = segment
 	}
 	log.Debug(messages.SetInMemoryCache)
@@ -170,14 +178,15 @@ func (ch *ConfigurationHandler) updateCacheAndListener(data []byte) {
 func (ch *ConfigurationHandler) fetchFromAPI() {
 	if ch.isInitialized {
 		builder := core.NewRequestBuilder(core.GET)
+		builder.AddQuery("action", "sdkConfig")
+		builder.AddQuery("collection_id", ch.collectionID)
 		builder.AddQuery("environment_id", ch.environmentID)
 		pathParamsMap := map[string]string{
-			"guid":          ch.guid,
-			"collection_id": ch.collectionID,
+			"guid": ch.guid,
 		}
-		_, err := builder.ResolveRequestURL(ch.urlBuilder.GetBaseServiceURL(), `/apprapp/feature/v1/instances/{guid}/collections/{collection_id}/config`, pathParamsMap)
+		_, err := builder.ResolveRequestURL(ch.urlBuilder.GetBaseServiceURL(), `/apprapp/feature/v1/instances/{guid}/config`, pathParamsMap)
 		if err != nil {
-			log.Error(err)
+			log.Error(err.Error())
 			return
 		}
 		builder.AddHeader("Accept", "application/json")
@@ -197,33 +206,43 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		// For 429 error code - The Request() will retry the request 3 times in an interval of time mentioned in ["Retry-after"] header.
 		// If all the 3 retries exhausts the call is returned and execution is given back to us to take the response object ahead.
 		//
-		// Both the cases [429 & 5xx] we schedule a retry after 10 minutes.
+		// Both the cases [429, 499 & 5xx] we schedule a retry after 2 minutes.
 
 		response, err := utils.GetAPIManagerInstance().Request(builder)
-		if response != nil && response.StatusCode == constants.StatusCodeOK {
+		if response != nil && response.StatusCode == 200 {
 			log.Debug(messages.FetchAPISuccessful)
 			jsonData, _ := json.Marshal(response.Result)
+			configurations := models.ExtractConfigurationsFromAPIResponse(jsonData)
+			if configurations == nil {
+				return
+			}
 			// asynchronously write the response to persistent volume, if enabled
 			if len(ch.persistentCacheDirectory) > 0 {
 				go utils.StoreFiles(string(jsonData), ch.persistentCacheDirectory)
 			}
 			// load the configurations in the response to cache maps
-			ch.updateCacheAndListener(jsonData)
+			ch.updateCacheAndListener(configurations)
 		} else {
 			if response != nil {
 				if response.Result != nil {
-					log.Error(response.Result, err)
+					log.Error(response.Result, err.Error())
 				} else {
-					log.Error(string(response.RawResult), err)
+					log.Error(string(response.RawResult), err.Error())
 				}
-				if response.StatusCode == constants.StatusCodeTooManyRequests || (response.StatusCode >= constants.StatusCodeServerErrorBegin && response.StatusCode <= constants.StatusCodeServerErrorEnd) {
-					time.AfterFunc(time.Second*time.Duration(ch.retryInterval), func() {
-						ch.fetchFromAPI()
-					})
-					log.Info(messages.RetryScheduledMessage)
+				statusCode := response.StatusCode
+				if statusCode >= 400 && statusCode < 499 && statusCode != 429 {
+					// Do Nothing! GET "/config" failed due to client-side error.
+					return
 				}
+				if ch.scheduledRetry != nil {
+					ch.scheduledRetry.Stop()
+				}
+				ch.scheduledRetry = time.AfterFunc(time.Minute*time.Duration(ch.retryInterval), func() {
+					ch.fetchFromAPI()
+				})
+				log.Info(fmt.Sprintf(messages.RetryScheduledMessage, ch.retryInterval))
 			} else {
-				log.Error(messages.ConfigAPIError, err)
+				log.Error(messages.ConfigAPIError, err.Error())
 			}
 		}
 	} else {
@@ -239,7 +258,9 @@ func (ch *ConfigurationHandler) startWebSocket() {
 		log.Error(messages.WebSocketConnectFailed, messages.AuthTokenError)
 		return
 	}
-	h := http.Header{"Authorization": []string{authToken}}
+	h := make(http.Header)
+	h.Add("Authorization", authToken)
+	h.Add("User-Agent", constants.UserAgent)
 	var err error
 	if ch.socketConnection != nil {
 		ch.socketConnection.Close()
@@ -247,15 +268,16 @@ func (ch *ConfigurationHandler) startWebSocket() {
 	ch.socketConnection, ch.socketConnectionResponse, err = websocket.DefaultDialer.Dial(ch.urlBuilder.GetWebSocketURL(), h)
 	if err != nil {
 		if ch.socketConnectionResponse != nil {
-			log.Error(messages.WebSocketConnectErr, err, ch.socketConnectionResponse.StatusCode)
-			// websocket dial that fails with response status code in between 400-499, except 429, are not retried as failure is due to client side error
-			socketConnectRespStatusCode := ch.socketConnectionResponse.StatusCode
-			if socketConnectRespStatusCode >= constants.StatusCodeClientErrorBegin &&
-				socketConnectRespStatusCode <= constants.StatusCodeClientErrorEnd &&
-				socketConnectRespStatusCode != constants.StatusCodeTooManyRequests {
+			statusCode := ch.socketConnectionResponse.StatusCode
+			if statusCode >= 400 && statusCode < 499 && statusCode != 429 {
+				// websocket dial that fails with response status code in between 400-499, except 429 & 499, are not retried.
+				// Do Nothing! Since websocket connect failed due to client-side error.
+				log.Error(messages.WebSocketConnectErr+err.Error(), " ", statusCode)
 				return
 			}
 		}
+		log.Error(messages.WebSocketConnectErr, err.Error(), " Retrying websocket connect in 15 seconds...")
+		time.Sleep(15 * time.Second)
 		go ch.startWebSocket()
 		return
 	}
@@ -314,8 +336,6 @@ func (ch *ConfigurationHandler) getProperty(propertyID string) (models.Property,
 	log.Error(messages.InvalidPropertyID, propertyID)
 	return models.Property{}, errors.New(messages.ErrorInvalidPropertyID + propertyID)
 }
-
-// GetSecret : Get Secret
 func (ch *ConfigurationHandler) getSecret(propertyID string, secretsManagerService *sm.SecretsManagerV2) (models.SecretProperty, error) {
 	property, err := ch.getProperty(propertyID)
 	if err != nil {

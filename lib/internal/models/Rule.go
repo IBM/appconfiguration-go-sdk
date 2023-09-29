@@ -27,8 +27,8 @@ import (
 // Rule : Rule struct
 type Rule struct {
 	Values        []interface{} `json:"values"`
-	Operator      string
-	AttributeName string `json:"Attribute_Name"`
+	Operator      string        `json:"operator"`
+	AttributeName string        `json:"attribute_name"`
 }
 
 // GetValues : Get Values

@@ -174,7 +174,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 							} else {
 								segmentLevelRolloutPercentage = int(segmentRule.GetRolloutPercentage().(float64))
 							}
-							if segmentLevelRolloutPercentage == 100 || utils.GetNormalizedValue(entityID+":"+f.GetFeatureID()) < segmentLevelRolloutPercentage {
+							if segmentLevelRolloutPercentage == 100 || GetNormalizedValue(entityID+":"+f.GetFeatureID()) < segmentLevelRolloutPercentage {
 								if segmentRule.GetValue() == "$default" {
 									return f.GetEnabledValue(), true
 								} else {
@@ -188,7 +188,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 				}
 			}
 		}
-		if f.GetRolloutPercentage() == 100 || utils.GetNormalizedValue(entityID+":"+f.GetFeatureID()) < f.GetRolloutPercentage() {
+		if f.GetRolloutPercentage() == 100 || GetNormalizedValue(entityID+":"+f.GetFeatureID()) < f.GetRolloutPercentage() {
 			return f.GetEnabledValue(), true
 		}
 		return f.GetDisabledValue(), false

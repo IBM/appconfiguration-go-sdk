@@ -119,6 +119,19 @@ func TestSetContext(t *testing.T) {
 		t.Errorf("Test failed: Incorrect error message")
 	}
 	reset(ac)
+
+	// test bootstrap initialisation when file path in invalid. (it should be string ending with .json only)
+	ac.Init("a", "b", "c")
+	ac.isInitialized = true
+	assert.Equal(t, false, ac.isInitializedConfig)
+	ac.SetContext("c1", "dev", ContextOptions{
+		BootstrapFile:           "my-bootstrap-file",
+		LiveConfigUpdateEnabled: false,
+	})
+	if hook.LastEntry().Message != "AppConfiguration - Invalid value provided for BootstrapFile parameter - my-bootstrap-file" {
+		t.Errorf("Test failed: Incorrect error message")
+	}
+	reset(ac)
 }
 func TestGetFeature(t *testing.T) {
 	// test get feature when not initialised properly
