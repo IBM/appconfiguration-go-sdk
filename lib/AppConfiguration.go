@@ -59,6 +59,9 @@ const REGION_AU_SYD = "au-syd"
 // REGION_US_EAST : Washington DC Region
 const REGION_US_EAST = "us-east"
 
+// REGION_EU_DE : Frankfurt Region
+const REGION_EU_DE = "eu-de"
+
 // GetInstance : Get App Configuration Instance
 func GetInstance() *AppConfiguration {
 	log.Debug(messages.RetrieveingAppConfig)
