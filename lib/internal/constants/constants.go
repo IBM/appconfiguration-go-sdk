@@ -26,7 +26,7 @@ const DefaultEntityID = "$$null$$"
 const DefaultUsageLimit = 10
 
 // UserAgent specifies the user agent name
-const UserAgent = "appconfiguration-go-sdk/0.5.4"
+const UserAgent = "appconfiguration-go-sdk/0.5.5"
 
 // ConfigurationFile : Name of file to which configurations will be written
 const ConfigurationFile = "appconfiguration.json"
