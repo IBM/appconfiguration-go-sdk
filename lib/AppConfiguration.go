@@ -62,6 +62,15 @@ const REGION_US_EAST = "us-east"
 // REGION_EU_DE : Frankfurt Region
 const REGION_EU_DE = "eu-de"
 
+// REGION_CA_TOR : Toronto Region
+const REGION_CA_TOR = "ca-tor"
+
+// REGION_JP_TOK : Tokyo Region
+const REGION_JP_TOK = "jp-tok"
+
+// REGION_JP_OSA : Osaka Region
+const REGION_JP_OSA = "jp-osa"
+
 // GetInstance : Get App Configuration Instance
 func GetInstance() *AppConfiguration {
 	log.Debug(messages.RetrieveingAppConfig)

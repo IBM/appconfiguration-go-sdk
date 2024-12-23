@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.5.4
+# IBM Cloud App Configuration Go server SDK 0.5.5
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -79,6 +79,9 @@ using **`AppConfiguration.GetInstance()`**. [See this example below](#fetching-t
     - `AppConfiguration.REGION_AU_SYD` for Sydney
     - `AppConfiguration.REGION_US_EAST` for Washington DC
     - `AppConfiguration.REGION_EU_DE` for Frankfurt
+    - `AppConfiguration.REGION_CA_TOR` for Toronto
+    - `AppConfiguration.REGION_JP_TOK` for Tokyo
+    - `AppConfiguration.REGION_JP_OSA` for Osaka
 - guid : Instance Id of the App Configuration service. Obtain it from the service credentials section of the App
   Configuration dashboard.
 - apikey : ApiKey of the App Configuration service. Obtain it from the service credentials section of the App
