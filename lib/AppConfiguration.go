@@ -80,6 +80,11 @@ func GetInstance() *AppConfiguration {
 	return appConfigurationInstance
 }
 
+// IsConnected method returns the server-client connection status as a boolean
+func (ac *AppConfiguration) IsConnected() bool {
+	return isAlive
+}
+
 // OverrideServiceUrl method overrides the default App Configuration URL.
 // This method should be invoked before the SDK initialization.
 //

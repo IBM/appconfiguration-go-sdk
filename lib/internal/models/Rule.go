@@ -18,6 +18,7 @@ package models
 
 import (
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -58,11 +59,20 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 	case "endsWith":
 		result = strings.HasSuffix(key.(string), value.(string))
 		break
+	case "notEndsWith":
+		result = !strings.HasSuffix(key.(string), value.(string))
+		break
 	case "startsWith":
 		result = strings.HasPrefix(key.(string), value.(string))
 		break
+	case "notStartsWith":
+		result = !strings.HasPrefix(key.(string), value.(string))
+		break
 	case "contains":
 		result = strings.Contains(key.(string), value.(string))
+		break
+	case "notContains":
+		result = !strings.Contains(key.(string), value.(string))
 		break
 	case "is":
 		if isNumber(key) {
@@ -77,6 +87,21 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 		} else {
 			// compare string
 			result = (key == value)
+		}
+		break
+	case "isNot":
+		if isNumber(key) {
+			// compare number
+			key, _ = getFloat(key)
+			value, _ = strconv.ParseFloat(value.(string), 64)
+			result = !(key.(float64) == value.(float64))
+		} else if isBool(key) {
+			// compare boolean
+			key, _ = formatBool(key) //convert boolean true/false to string "true"/"false"
+			result = !(key == value.(string))
+		} else {
+			// compare string
+			result = !(key == value)
 		}
 		break
 	case "greaterThan":
@@ -194,9 +219,19 @@ func (r *Rule) EvaluateRule(entityAttributes map[string]interface{}) bool {
 	if !ok {
 		return false
 	}
-	for _, val := range r.GetValues() {
-		if r.operatorCheck(key, val) {
-			result = true
+	negativeOperators := []string{"isNot", "notContains", "notStartsWith", "notEndsWith"}
+	if slices.Contains(negativeOperators, r.Operator) {
+		result = true
+		for _, val := range r.GetValues() {
+			if !r.operatorCheck(key, val) {
+				result = false
+			}
+		}
+	} else {
+		for _, val := range r.GetValues() {
+			if r.operatorCheck(key, val) {
+				result = true
+			}
 		}
 	}
 	return result

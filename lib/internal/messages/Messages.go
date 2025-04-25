@@ -247,11 +247,14 @@ const FetchAPISuccessful = "Successfully fetched the configurations."
 // WebSocketConnectFailed : WebSocketConnectFailed const
 const WebSocketConnectFailed = "Socket connect failed. "
 
+// WebSocketConnectSuccess: WebSocketConnectSuccess const
+const WebSocketConnectSuccess = "Socket connect successful."
+
 // AuthTokenError : AuthTokenError const
 const AuthTokenError = "Could not generate Bearer token for the provided API Key."
 
 // RetryScheduledMessage : RetryScheduledMessage const
-const RetryScheduledMessage = "Failed to fetch the configurations due to server error. Scheduled the API request to retry after %d minutes."
+const RetryScheduledMessage = " Scheduling the API request to retry after %d minutes."
 
 // InvalidPropertyValueMessage : InvalidPropertyValueMessage const
 const InvalidPropertyValueMessage = "Property Value is either invalid or empty."
