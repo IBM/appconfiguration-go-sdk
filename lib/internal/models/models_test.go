@@ -471,10 +471,29 @@ func TestRule(t *testing.T) {
 	//
 
 	rule = Rule{
+		Operator: "startsWith",
+	}
+	val = rule.operatorCheck("ibm.com", "ibm")
+	assert.Equal(t, true, val)
+
+	rule = Rule{
+		Operator: "notStartsWith",
+	}
+	val = rule.operatorCheck("ibm.com", "com")
+	assert.Equal(t, true, val)
+
+	rule = Rule{
 		Operator: "endsWith",
 	}
 	val = rule.operatorCheck("ibm.com", "com")
 	assert.Equal(t, true, val)
+
+	rule = Rule{
+		Operator: "notEndsWith",
+	}
+	val = rule.operatorCheck("ibm.com", "ibm")
+	assert.Equal(t, true, val)
+
 
 	//
 
@@ -482,6 +501,12 @@ func TestRule(t *testing.T) {
 		Operator: "contains",
 	}
 	val = rule.operatorCheck("ibm.com", "ibm")
+	assert.Equal(t, true, val)
+
+	rule = Rule{
+		Operator: "notContains",
+	}
+	val = rule.operatorCheck("ibm.com", "bob")
 	assert.Equal(t, true, val)
 
 	rule = Rule{
@@ -494,6 +519,18 @@ func TestRule(t *testing.T) {
 	assert.Equal(t, true, val)
 
 	val = rule.operatorCheck(true, "true")
+	assert.Equal(t, true, val)
+
+	rule = Rule{
+		Operator: "isNot",
+	}
+	val = rule.operatorCheck("ibm.com", "ibm")
+	assert.Equal(t, true, val)
+
+	val = rule.operatorCheck(1.5, "1.6")
+	assert.Equal(t, true, val)
+
+	val = rule.operatorCheck(true, "false")
 	assert.Equal(t, true, val)
 
 	rule = Rule{

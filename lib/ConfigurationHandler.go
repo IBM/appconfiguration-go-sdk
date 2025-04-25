@@ -36,6 +36,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// variable to keep track of status of server-client connection
+var isAlive = false
+
 type configurationUpdateListenerFunc func()
 
 // ConfigurationHandler : Configuration Handler
@@ -175,6 +178,21 @@ func (ch *ConfigurationHandler) updateCacheAndListener(data []byte) {
 		ch.configurationUpdateListener()
 	}
 }
+func extractErrorMessage(err error, response *core.DetailedResponse) string {
+	if err != nil {
+		return err.Error()
+	}
+	if response == nil {
+		return ""
+	}
+	if response.Result != nil {
+		resultStr, ok := response.Result.(string)
+		if ok {
+			return resultStr
+		}
+	}
+	return string(response.RawResult)
+}
 func (ch *ConfigurationHandler) fetchFromAPI() {
 	if ch.isInitialized {
 		builder := core.NewRequestBuilder(core.GET)
@@ -210,7 +228,7 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 
 		response, err := utils.GetAPIManagerInstance().Request(builder)
 		if response != nil && response.StatusCode == 200 {
-			log.Debug(messages.FetchAPISuccessful)
+			log.Info(messages.FetchAPISuccessful)
 			jsonData, _ := json.Marshal(response.Result)
 			configurations := models.ExtractConfigurationsFromAPIResponse(jsonData)
 			if configurations == nil {
@@ -223,27 +241,20 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 			// load the configurations in the response to cache maps
 			ch.updateCacheAndListener(configurations)
 		} else {
-			if response != nil {
-				if response.Result != nil {
-					log.Error(response.Result, err.Error())
-				} else {
-					log.Error(string(response.RawResult), err.Error())
-				}
-				statusCode := response.StatusCode
-				if statusCode >= 400 && statusCode < 499 && statusCode != 429 {
-					// Do Nothing! GET "/config" failed due to client-side error.
-					return
-				}
-				if ch.scheduledRetry != nil {
-					ch.scheduledRetry.Stop()
-				}
-				ch.scheduledRetry = time.AfterFunc(time.Minute*time.Duration(ch.retryInterval), func() {
-					ch.fetchFromAPI()
-				})
-				log.Info(fmt.Sprintf(messages.RetryScheduledMessage, ch.retryInterval))
-			} else {
-				log.Error(messages.ConfigAPIError, err.Error())
+			if response != nil && response.StatusCode >= 400 && response.StatusCode < 499 && response.StatusCode != 429 {
+				// Do Nothing! GET "/config" failed due to a client-side error.
+				// Print the error message and return.
+				log.Error(extractErrorMessage(err, response))
+				return
 			}
+			errMessage := extractErrorMessage(err, response)
+			log.Error(messages.ConfigAPIError, errMessage, fmt.Sprintf(messages.RetryScheduledMessage, ch.retryInterval))
+			if ch.scheduledRetry != nil {
+				ch.scheduledRetry.Stop()
+			}
+			ch.scheduledRetry = time.AfterFunc(time.Minute*time.Duration(ch.retryInterval), func() {
+				ch.fetchFromAPI()
+			})
 		}
 	} else {
 		log.Debug(messages.FetchFromAPISdkInitError)
@@ -263,15 +274,17 @@ func (ch *ConfigurationHandler) startWebSocket() {
 	h.Add("User-Agent", constants.UserAgent)
 	var err error
 	if ch.socketConnection != nil {
+		isAlive = false
 		ch.socketConnection.Close()
 	}
 	ch.socketConnection, ch.socketConnectionResponse, err = websocket.DefaultDialer.Dial(ch.urlBuilder.GetWebSocketURL(), h)
 	if err != nil {
+		isAlive = false
 		if ch.socketConnectionResponse != nil {
 			statusCode := ch.socketConnectionResponse.StatusCode
 			if statusCode >= 400 && statusCode < 499 && statusCode != 429 {
 				// websocket dial that fails with response status code in between 400-499, except 429 & 499, are not retried.
-				// Do Nothing! Since websocket connect failed due to client-side error.
+				// Do Nothing! Since websocket connect failed due to a client-side error.
 				log.Error(messages.WebSocketConnectErr+err.Error(), " ", statusCode)
 				return
 			}
@@ -281,16 +294,20 @@ func (ch *ConfigurationHandler) startWebSocket() {
 		go ch.startWebSocket()
 		return
 	}
+	log.Debug(messages.WebSocketConnectSuccess)
 	// defer c.Close()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for {
 			if ch.socketConnection != nil {
+				isAlive = true
 				_, message, err := ch.socketConnection.ReadMessage()
 				log.Debug(string(message))
 				if err != nil {
-					log.Error(messages.WebsocketErrorReadingMessage, err.Error())
+					isAlive = false
+					log.Error(messages.WebsocketErrorReadingMessage, err.Error(), " Retrying websocket connect in 15 seconds...")
+					time.Sleep(15 * time.Second)
 					go ch.startWebSocket()
 					return
 				}
@@ -299,6 +316,8 @@ func (ch *ConfigurationHandler) startWebSocket() {
 					ch.fetchFromAPI()
 				}
 			} else {
+				isAlive = false
+				time.Sleep(15 * time.Second)
 				go ch.startWebSocket()
 				return
 			}
