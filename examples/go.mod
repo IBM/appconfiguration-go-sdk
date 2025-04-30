@@ -1,6 +1,8 @@
 module examples
 
-go 1.16
+go 1.23.0
+
+toolchain go1.23.7
 
 require (
 	github.com/IBM/appconfiguration-go-sdk v0.5.7
