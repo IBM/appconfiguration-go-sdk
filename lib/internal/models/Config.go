@@ -16,47 +16,35 @@
 
 package models
 
-// Configurations : all the configurations pulled out from bootstrapJson/persistentCache/GitConfig/APIResponse
+// CacheConfig : all the configurations pulled out from bootstrapJson/persistentCache/GitConfig/APIResponse
 // will be stored in this struct format.
-type Configurations struct {
-	Features   []Feature  `json:"features"`
-	Properties []Property `json:"properties"`
-	Segments   []Segment  `json:"segments"`
+type CacheConfig struct {
+	Features   []FeatureC  `json:"features"`
+	Properties []PropertyC `json:"properties"`
+	Segments   []Segment   `json:"segments"`
 }
 
-// BootstrapConfig : the format of bootstrap configurations.
-type BootstrapConfig struct {
-	Environments []EnvironmentC `json:"environments"`
-	Collections  []Collection   `json:"collections"`
-	Segments     []Segment      `json:"segments"`
+// Config : the format of all configurations.
+type Config struct {
+	Environments []Environment `json:"environments"`
+	Collections  []Collection  `json:"collections"`
+	Segments     []Segment     `json:"segments"`
 }
-type EnvironmentC struct {
+type Environment struct {
 	Name          string      `json:"name"`
 	EnvironmentID string      `json:"environment_id"`
 	Features      []FeatureC  `json:"features"`
 	Properties    []PropertyC `json:"properties"`
 }
 type Collection struct {
-	Name         string `json:"name"`
+	Name         string `json:"name,omitempty"`
 	CollectionID string `json:"collection_id"`
 }
 type FeatureC struct {
 	Feature
-	Collections []Collection `json:"collections"`
+	Collections []Collection `json:"collections,omitempty"`
 }
 type PropertyC struct {
 	Property
-	Collections []Collection `json:"collections"`
-}
-
-// APIConfig : the format of configurations returned from the API: `GET /config?action=sdkConfig`
-type APIConfig struct {
-	Environments []Environment `json:"environments"`
-	Segments     []Segment     `json:"segments"`
-}
-type Environment struct {
-	Name          string     `json:"name"`
-	EnvironmentID string     `json:"environment_id"`
-	Features      []Feature  `json:"features"`
-	Properties    []Property `json:"properties"`
+	Collections []Collection `json:"collections,omitempty"`
 }

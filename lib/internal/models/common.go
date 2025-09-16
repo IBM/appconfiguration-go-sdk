@@ -18,8 +18,7 @@ package models
 
 import (
 	"encoding/json"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"errors"
 	"github.com/spaolacci/murmur3"
 	"math"
 )
@@ -37,50 +36,45 @@ func GetNormalizedValue(str string) int {
 	return int((computeHash(str) / maxHashValue) * float64(normalizer))
 }
 
-// ExtractConfigurationsFromBootstrapJson will
-// 1. Parse the bootstrap configuration into models.BootstrapConfig struct
-// 2. Extract all the Features, Properties & Segments that are under environmentId and assigned to collectionId into models.Configurations struct
-// 3. And Marshals the models.Configurations
-// Currently, for any type of errors that will occur, this method will not return error instead returns a nil.
-// In the future, we will consider returning the error.
-func ExtractConfigurationsFromBootstrapJson(bootstrapFileData []byte, collectionId, environmentId string) []byte {
-	errMessage := `Error occurred while reading bootstrap configurations - `
+// ExtractConfigurations will
+// 1. Parse the configuration into models.Config struct
+// 2. Extract all the Features, Properties & Segments that are under environmentId and assigned to collectionId
+// 3. If collections array is not present - feature/property is still considered as part of the config.
+// 4. And Marshals the extracted data into models.CacheConfig
+func ExtractConfigurations(data []byte, environmentId, collectionId string) ([]byte, error) {
 
-	bootstrapConfig := BootstrapConfig{}
-	err := json.Unmarshal(bootstrapFileData, &bootstrapConfig)
+	config := Config{}
+	err := json.Unmarshal(data, &config)
 	if err != nil {
-		log.Error(errMessage + err.Error())
-		return nil
+		return nil, errors.New("failed to parse configurations: " + err.Error())
 	}
 
 	// validate environmentId & pick the environment
-	var matchingEnv *EnvironmentC
-	for _, env := range bootstrapConfig.Environments {
+	var matchingEnv *Environment
+	for _, env := range config.Environments {
 		if env.EnvironmentID == environmentId {
 			matchingEnv = &env
 			break
 		}
 	}
 	if matchingEnv == nil {
-		log.Error(errMessage+"no data matching for environment id: ", environmentId)
-		return nil
+		return nil, errors.New("no data matching for environment id: " + environmentId)
 	}
 
 	// validate collectionId
 	var matchingCol *Collection
-	for _, col := range bootstrapConfig.Collections {
+	for _, col := range config.Collections {
 		if col.CollectionID == collectionId {
 			matchingCol = &col
 			break
 		}
 	}
 	if matchingCol == nil {
-		log.Error(errMessage+"no data matching for collection id: ", collectionId)
-		return nil
+		return nil, errors.New("no data matching for collection id: " + collectionId)
 	}
 	// slice's to store the extracted features, properties & segments
-	var features []Feature
-	var properties []Property
+	var features []FeatureC
+	var properties []PropertyC
 	var segments []Segment
 
 	var segmentIds []string
@@ -89,14 +83,19 @@ func ExtractConfigurationsFromBootstrapJson(bootstrapFileData []byte, collection
 	// loop through features in the matching environment, and pick all the features matching the collectionId
 	for _, feature := range matchingEnv.Features {
 		match := false
-		for _, collection := range feature.Collections {
-			if collection.CollectionID == collectionId {
-				match = true
-				break
+		// special case for collections field non-existing
+		if feature.Collections == nil {
+			match = true
+		} else {
+			for _, collection := range feature.Collections {
+				if collection.CollectionID == collectionId {
+					match = true
+					break
+				}
 			}
 		}
 		if match {
-			features = append(features, feature.Feature)
+			features = append(features, feature)
 			// get the segmentIds from the extracted feature. Use the segmentId to extract segments.
 			for _, segmentRule := range feature.SegmentRules {
 				for _, rules := range segmentRule.Rules {
@@ -111,14 +110,19 @@ func ExtractConfigurationsFromBootstrapJson(bootstrapFileData []byte, collection
 	// loop through properties in the matching environment, and pick all the properties matching the collectionId
 	for _, property := range matchingEnv.Properties {
 		match := false
-		for _, collection := range property.Collections {
-			if collection.CollectionID == collectionId {
-				match = true
-				break
+		// special case for collections field non-existing
+		if property.Collections == nil {
+			match = true
+		} else {
+			for _, collection := range property.Collections {
+				if collection.CollectionID == collectionId {
+					match = true
+					break
+				}
 			}
 		}
 		if match {
-			properties = append(properties, property.Property)
+			properties = append(properties, property)
 			// get the segmentIds from the extracted feature. Use the segmentId to extract segments.
 			for _, segmentRule := range property.SegmentRules {
 				for _, rules := range segmentRule.Rules {
@@ -142,79 +146,45 @@ func ExtractConfigurationsFromBootstrapJson(bootstrapFileData []byte, collection
 	// For all the unique segmentIds extract their segment
 	for _, segmentId := range uniqueSegmentIdsSlice {
 		var matchingSeg *Segment
-		for _, segment := range bootstrapConfig.Segments {
+		for _, segment := range config.Segments {
 			if segment.SegmentID == segmentId {
 				matchingSeg = &segment
 				break
 			}
 		}
 		if matchingSeg == nil {
-			log.Error(errMessage+"no data matching for segment id: ", segmentId)
-			return nil
+			return nil, errors.New("no data matching for segment id: " + segmentId)
 		}
 		segments = append(segments, *matchingSeg)
 	}
 
-	c, err := json.Marshal(Configurations{
+	c, err := json.Marshal(CacheConfig{
 		Features:   features,
 		Properties: properties,
 		Segments:   segments,
 	})
 	// highly unlikely that err will not be nil.
 	if err != nil {
-		log.Error(errMessage + err.Error())
-		return nil
+		return nil, errors.New("failed to marshal configurations: " + err.Error())
 	}
-	return c
+	return c, nil
 }
 
-// ExtractConfigurationsFromAPIResponse will
-// 1. Parse the configuration into models.APIConfig struct
-// 2. Extract all the Features, Properties & Segments into models.Configurations struct
-func ExtractConfigurationsFromAPIResponse(res []byte) []byte {
-	defer utils.GracefullyHandleError()
-	errMessage := `Error occurred while reading fetched configurations - `
-
-	apiConfig := APIConfig{}
-	err := json.Unmarshal(res, &apiConfig)
-	if err != nil {
-		log.Error(errMessage + err.Error())
-		return nil
-	}
-
-	features := apiConfig.Environments[0].Features
-	properties := apiConfig.Environments[0].Properties
-	segments := apiConfig.Segments
-
-	c, err := json.Marshal(Configurations{
-		Features:   features,
-		Properties: properties,
-		Segments:   segments,
-	})
-	// highly unlikely that err will not be nil.
-	if err != nil {
-		log.Error(errMessage + err.Error())
-		return nil
-	}
-	return c
-}
-
-// AliasFunction : Only for readability purpose.
-// The configurations stored in Persistent cache & configuration fetched from API both are in same format
-var ExtractConfigurationsFromPersistentCache = ExtractConfigurationsFromAPIResponse
-
-// FormatConfig : will reformat the configurations from type Configurations to type APIConfig
-func FormatConfig(data []byte, environmentId string) []byte {
-	configurations := Configurations{}
+// FormatConfig : will reformat the configurations from type CacheConfig to type Config
+func FormatConfig(data []byte, environmentId, collectionId string) []byte {
+	configurations := CacheConfig{}
 	_ = json.Unmarshal(data, &configurations)
 
-	reformatted := APIConfig{}
+	reformatted := Config{}
 	reformatted.Environments = append(reformatted.Environments, Environment{})
-
 	reformatted.Environments[0].Name = environmentId
 	reformatted.Environments[0].EnvironmentID = environmentId
 	reformatted.Environments[0].Features = configurations.Features
 	reformatted.Environments[0].Properties = configurations.Properties
+
+	reformatted.Collections = append(reformatted.Collections, Collection{})
+	reformatted.Collections[0].CollectionID = collectionId
+
 	reformatted.Segments = configurations.Segments
 
 	c, _ := json.Marshal(reformatted)

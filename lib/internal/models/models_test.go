@@ -494,7 +494,6 @@ func TestRule(t *testing.T) {
 	val = rule.operatorCheck("ibm.com", "ibm")
 	assert.Equal(t, true, val)
 
-
 	//
 
 	rule = Rule{
@@ -572,8 +571,8 @@ func TestRule(t *testing.T) {
 
 func TestFormatConfig(t *testing.T) {
 	data := `{"features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":75}],"properties":[{"name":"ShowAd","property_id":"show-ad","tags":"","type":"BOOLEAN","value":false,"segment_rules":[]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
-	expectedReformat := `{"environments":[{"name":"myEnvironment","environment_id":"myEnvironment","features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","format":"","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":75}],"properties":[{"name":"ShowAd","property_id":"show-ad","type":"BOOLEAN","format":"","value":false,"segment_rules":[]}]}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
-	reformattedData := FormatConfig([]byte(data), "myEnvironment")
+	expectedReformat := `{"environments":[{"name":"myEnvironment","environment_id":"myEnvironment","features":[{"name":"Cycle Rentals8","feature_id":"cycle-rentals8","type":"BOOLEAN","format":"","enabled_value":true,"disabled_value":false,"segment_rules":[],"enabled":true,"rollout_percentage":75}],"properties":[{"name":"ShowAd","property_id":"show-ad","type":"BOOLEAN","format":"","value":false,"segment_rules":[]}]}],"collections":[{"collection_id":"myCollection"}],"segments":[{"name":"beta-users","segment_id":"knliu818","rules":[{"values":["ibm.com"],"operator":"contains","attribute_name":"email"}]},{"name":"ibm employees","segment_id":"ka761hap","rules":[{"values":["ibm.com","in.ibm.com"],"operator":"endsWith","attribute_name":"email"}]}]}`
+	reformattedData := FormatConfig([]byte(data), "myEnvironment", "myCollection")
 	if !reflect.DeepEqual([]byte(expectedReformat), reformattedData) {
 		t.Error("Expected TestFormatConfig test case to pass")
 	}
@@ -588,56 +587,36 @@ func mockLogger() {
 func TestExtractConfigurationsFromBootstrapJson(t *testing.T) {
 	mockLogger()
 	bootstrapJsonData := `invalidJsonStr`
-	output := ExtractConfigurationsFromBootstrapJson([]byte(bootstrapJsonData), "myCollection", "myEnvironment")
+	output, err := ExtractConfigurations([]byte(bootstrapJsonData), "myEnvironment", "myCollection")
 	assert.Nil(t, output)
-	if hook.LastEntry().Message != "AppConfiguration - Error occurred while reading bootstrap configurations - invalid character 'i' looking for beginning of value" {
-		t.Errorf("Test failed: Incorrect error message")
-	}
+	assert.NotNil(t, err)
+	assert.Regexp(t, "failed to parse configurations: ", err.Error())
 
 	bootstrapJsonData = `{"environments":[{"name":"Dev","environment_id":"dev","description":"","tags":"","color_code":"#FDD13A","features":[],"properties":[]}],"collections":[],"segments":[]}`
-	output = ExtractConfigurationsFromBootstrapJson([]byte(bootstrapJsonData), "myCollection", "myEnvironment")
+	output, err = ExtractConfigurations([]byte(bootstrapJsonData), "myEnvironment", "myCollection")
 	assert.Nil(t, output)
-	if hook.LastEntry().Message != "AppConfiguration - Error occurred while reading bootstrap configurations - no data matching for environment id: myEnvironment" {
-		t.Errorf("Test failed: Incorrect error message")
-	}
+	assert.NotNil(t, err)
+	assert.Regexp(t, "no data matching for environment id: myEnvironment", err.Error())
 
 	bootstrapJsonData = `{"environments":[{"name":"Dev","environment_id":"myEnvironment","description":"","tags":"","color_code":"#FDD13A","features":[],"properties":[]}],"collections":[],"segments":[]}`
-	output = ExtractConfigurationsFromBootstrapJson([]byte(bootstrapJsonData), "myCollection", "myEnvironment")
+	output, err = ExtractConfigurations([]byte(bootstrapJsonData), "myEnvironment", "myCollection")
 	assert.Nil(t, output)
-	if hook.LastEntry().Message != "AppConfiguration - Error occurred while reading bootstrap configurations - no data matching for collection id: myCollection" {
-		t.Errorf("Test failed: Incorrect error message")
-	}
+	assert.NotNil(t, err)
+	assert.Regexp(t, "no data matching for collection id: myCollection", err.Error())
 
 	bootstrapJsonData = `{"environments":[{"name":"My Environment","environment_id":"myEnvironment","description":"Environment created on instance creation","tags":"","color_code":"#FDD13A","features":[{"name":"F1","feature_id":"f1","description":"","tags":"","type":"NUMERIC","enabled_value":5,"disabled_value":0,"segment_rules":[{"rules":[{"segments":["mysegment"]}],"value":40,"order":1}],"collections":[{"collection_id":"myCollection","name":"My Collection"}],"enabled":true,"isOverridden":true}],"properties":[]}],"collections":[{"name":"My Collection","collection_id":"myCollection","description":"","tags":""}],"segments":[{"name":"test","segment_id":"test","description":"","tags":"","rules":[{"values":["test"],"operator":"startsWith","attribute_name":"test"}]}]}`
-	output = ExtractConfigurationsFromBootstrapJson([]byte(bootstrapJsonData), "myCollection", "myEnvironment")
+	output, err = ExtractConfigurations([]byte(bootstrapJsonData), "myEnvironment", "myCollection")
 	assert.Nil(t, output)
-	if hook.LastEntry().Message != "AppConfiguration - Error occurred while reading bootstrap configurations - no data matching for segment id: mysegment" {
-		t.Errorf("Test failed: Incorrect error message")
-	}
+	assert.NotNil(t, err)
+	assert.Regexp(t, "no data matching for segment id: mysegment", err.Error())
 
 	bootstrapJsonData = `{"environments":[{"name":"My Environment","environment_id":"myEnvironment","description":"Environment created on instance creation","tags":"","color_code":"#FDD13A","features":[{"name":"F1","feature_id":"f1","description":"","tags":"","type":"NUMERIC","enabled_value":5,"disabled_value":0,"segment_rules":[{"rules":[{"segments":["l2dfo8do"]}],"value":40,"order":1}],"collections":[{"collection_id":"myCollection","name":"My Collection"}],"enabled":true,"isOverridden":true}],"properties":[{"name":"p1","property_id":"p1","description":"","tags":"","type":"NUMERIC","value":5,"segment_rules":[{"rules":[{"segments":["l2dfo8do"]}],"value":40,"order":1}],"collections":[{"collection_id":"myCollection","name":"My Collection"}],"isOverridden":true}]}],"collections":[{"name":"My Collection","collection_id":"myCollection","description":"","tags":""}],"segments":[{"name":"test","segment_id":"l2dfo8do","description":"","tags":"","rules":[{"values":["test"],"operator":"startsWith","attribute_name":"test"}]}]}`
-	output = ExtractConfigurationsFromBootstrapJson([]byte(bootstrapJsonData), "myCollection", "myEnvironment")
+	output, err = ExtractConfigurations([]byte(bootstrapJsonData), "myEnvironment", "myCollection")
 	assert.NotNil(t, output)
-	expectedConfigurations := `{"features":[{"name":"F1","feature_id":"f1","type":"NUMERIC","format":"","enabled_value":5,"disabled_value":0,"segment_rules":[{"rules":[{"segments":["l2dfo8do"]}],"value":40,"order":1,"rollout_percentage":null}],"enabled":true,"rollout_percentage":null}],"properties":[{"name":"p1","property_id":"p1","type":"NUMERIC","format":"","value":5,"segment_rules":[{"rules":[{"segments":["l2dfo8do"]}],"value":40,"order":1,"rollout_percentage":null}]}],"segments":[{"name":"test","segment_id":"l2dfo8do","rules":[{"values":["test"],"operator":"startsWith","attribute_name":"test"}]}]}`
+	assert.Nil(t, err)
+	expectedConfigurations := `{"features":[{"name":"F1","feature_id":"f1","type":"NUMERIC","format":"","enabled_value":5,"disabled_value":0,"segment_rules":[{"rules":[{"segments":["l2dfo8do"]}],"value":40,"order":1,"rollout_percentage":null}],"enabled":true,"rollout_percentage":null,"collections":[{"name":"My Collection","collection_id":"myCollection"}]}],"properties":[{"name":"p1","property_id":"p1","type":"NUMERIC","format":"","value":5,"segment_rules":[{"rules":[{"segments":["l2dfo8do"]}],"value":40,"order":1,"rollout_percentage":null}],"collections":[{"name":"My Collection","collection_id":"myCollection"}]}],"segments":[{"name":"test","segment_id":"l2dfo8do","rules":[{"values":["test"],"operator":"startsWith","attribute_name":"test"}]}]}`
 	if !reflect.DeepEqual([]byte(expectedConfigurations), output) {
 		t.Error("Expected TestExtractConfigurationsFromBootstrapJson test case to pass")
 	}
 
-}
-func TestExtractConfigurationsFromAPIResponse(t *testing.T) {
-	mockLogger()
-	configRes := `invalidJsonStr`
-	output := ExtractConfigurationsFromAPIResponse([]byte(configRes))
-	assert.Nil(t, output)
-	if hook.LastEntry().Message != "AppConfiguration - Error occurred while reading fetched configurations - invalid character 'i' looking for beginning of value" {
-		t.Errorf("Test failed: Incorrect error message")
-	}
-
-	configRes = `{"environments":[{"name":"Dev","environment_id":"dev","features":[{"name":"Flight Booking Discounts","feature_id":"discount-on-flight-booking","type":"NUMERIC","enabled_value":15,"disabled_value":0,"segment_rules":[],"enabled":true,"rollout_percentage":100}],"properties":[{"name":"CI Pipeline","property_id":"ci-pipeline","type":"BOOLEAN","value":false,"segment_rules":[{"rules":[{"segments":["kk488156"]}],"value":true,"order":1}]}]}],"segments":[{"name":"spartans","segment_id":"kk488156","rules":[{"values":["bob@bluecharge.com","alice@bluecharge.com"],"operator":"is","attribute_name":"email"}]}]}`
-	output = ExtractConfigurationsFromAPIResponse([]byte(configRes))
-	assert.NotNil(t, output)
-	expectedConfigurations := `{"features":[{"name":"Flight Booking Discounts","feature_id":"discount-on-flight-booking","type":"NUMERIC","format":"","enabled_value":15,"disabled_value":0,"segment_rules":[],"enabled":true,"rollout_percentage":100}],"properties":[{"name":"CI Pipeline","property_id":"ci-pipeline","type":"BOOLEAN","format":"","value":false,"segment_rules":[{"rules":[{"segments":["kk488156"]}],"value":true,"order":1,"rollout_percentage":null}]}],"segments":[{"name":"spartans","segment_id":"kk488156","rules":[{"values":["bob@bluecharge.com","alice@bluecharge.com"],"operator":"is","attribute_name":"email"}]}]}`
-	if !reflect.DeepEqual([]byte(expectedConfigurations), output) {
-		t.Error("Expected TestExtractConfigurationsFromAPIResponse test case to pass")
-	}
 }
