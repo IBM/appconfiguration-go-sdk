@@ -104,8 +104,10 @@ func (ch *ConfigurationHandler) loadData() {
 		log.Info(messages.ReadPersistentCache, path)
 		ch.persistentData = utils.ReadFiles(path)
 		if !bytes.Equal(ch.persistentData, []byte(`{}`)) {
-			configurations := models.ExtractConfigurationsFromPersistentCache(ch.persistentData)
-			if configurations != nil {
+			configurations, err := models.ExtractConfigurations(ch.persistentData, ch.environmentID, ch.collectionID)
+			if err != nil {
+				log.Error("Error occurred while reading persistent cache configurations - ", err.Error())
+			} else {
 				ch.saveInCache(configurations)
 				persistentCacheRead = true
 			}
@@ -116,17 +118,22 @@ func (ch *ConfigurationHandler) loadData() {
 		if len(ch.persistentCacheDirectory) > 0 {
 			if !persistentCacheRead {
 				bootstrapFileData := utils.ReadFiles(path)
-				bootstrapConfigurations := models.ExtractConfigurationsFromBootstrapJson(bootstrapFileData, ch.collectionID, ch.environmentID)
-				if bootstrapConfigurations != nil {
+				bootstrapConfigurations, err := models.ExtractConfigurations(bootstrapFileData, ch.environmentID, ch.collectionID)
+				if err != nil {
+					log.Error("Error occurred while reading bootstrap configurations - ", err.Error())
+				} else {
 					ch.saveInCache(bootstrapConfigurations)
-					go utils.StoreFiles(string(models.FormatConfig(bootstrapConfigurations, ch.environmentID)), ch.persistentCacheDirectory)
+					go utils.StoreFiles(string(models.FormatConfig(bootstrapConfigurations, ch.environmentID, ch.collectionID)), ch.persistentCacheDirectory)
+
 				}
 			}
 		} else {
 			log.Info(messages.ReadBootstrapConfigurations, path)
 			bootstrapFileData := utils.ReadFiles(path)
-			bootstrapConfigurations := models.ExtractConfigurationsFromBootstrapJson(bootstrapFileData, ch.collectionID, ch.environmentID)
-			if bootstrapConfigurations != nil {
+			bootstrapConfigurations, err := models.ExtractConfigurations(bootstrapFileData, ch.environmentID, ch.collectionID)
+			if err != nil {
+				log.Error("Error occurred while reading bootstrap configurations - ", err.Error())
+			} else {
 				ch.saveInCache(bootstrapConfigurations)
 			}
 		}
@@ -147,7 +154,7 @@ func (ch *ConfigurationHandler) FetchConfigurationData() {
 func (ch *ConfigurationHandler) saveInCache(data []byte) {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
-	configurations := models.Configurations{}
+	configurations := models.CacheConfig{}
 	err := json.Unmarshal(data, &configurations)
 	if err != nil {
 		log.Error(messages.UnmarshalJSONErr, err)
@@ -156,12 +163,12 @@ func (ch *ConfigurationHandler) saveInCache(data []byte) {
 	log.Debug(configurations)
 	featureMap := make(map[string]models.Feature)
 	for _, feature := range configurations.Features {
-		featureMap[feature.GetFeatureID()] = feature
+		featureMap[feature.GetFeatureID()] = feature.Feature
 	}
 
 	propertyMap := make(map[string]models.Property)
 	for _, property := range configurations.Properties {
-		propertyMap[property.GetPropertyID()] = property
+		propertyMap[property.GetPropertyID()] = property.Property
 	}
 
 	segmentMap := make(map[string]models.Segment)
@@ -230,8 +237,9 @@ func (ch *ConfigurationHandler) fetchFromAPI() {
 		if response != nil && response.StatusCode == 200 {
 			log.Info(messages.FetchAPISuccessful)
 			jsonData, _ := json.Marshal(response.Result)
-			configurations := models.ExtractConfigurationsFromAPIResponse(jsonData)
-			if configurations == nil {
+			configurations, err := models.ExtractConfigurations(jsonData, ch.environmentID, ch.collectionID)
+			if err != nil {
+				log.Error("Error occurred while reading fetched configurations - ", err.Error())
 				return
 			}
 			// asynchronously write the response to persistent volume, if enabled
