@@ -4,12 +4,12 @@ go 1.24.0
 
 require (
 	github.com/IBM/go-sdk-core/v5 v5.21.2
-	github.com/IBM/secrets-manager-go-sdk/v2 v2.0.5
+	github.com/IBM/secrets-manager-go-sdk/v2 v2.0.18
 	github.com/gorilla/websocket v1.5.3
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spaolacci/murmur3 v1.1.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
