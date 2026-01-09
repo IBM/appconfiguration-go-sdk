@@ -159,13 +159,7 @@ func (ac *AppConfiguration) SetContext(collectionID string, environmentID string
 		return
 	}
 	ac.isInitializedConfig = true
-	// If the cache is not having data make a blocking call and load the data in in-memory cache , else use the existing cache data and asynchronously update it.
-	// This scenario can happen if the user uses setcontext second time in the code , in that case cache would not be empty.
-	if ac.configurationHandlerInstance.cache == nil {
-		ac.configurationHandlerInstance.loadData()
-	} else {
-		go ac.configurationHandlerInstance.loadData()
-	}
+	ac.configurationHandlerInstance.loadData()
 }
 
 // FetchConfigurations : Fetch Configurations
