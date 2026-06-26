@@ -33,6 +33,7 @@ import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/IBM/go-sdk-core/v5/core"
 	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/gorilla/websocket"
 )
 
@@ -162,8 +163,35 @@ func (ch *ConfigurationHandler) saveInCache(data []byte) {
 	}
 	log.Debug(configurations)
 	featureMap := make(map[string]models.Feature)
+	rolloutConfigMap := make(map[string]*treemap.Map)
+
 	for _, feature := range configurations.Features {
 		featureMap[feature.GetFeatureID()] = feature.Feature
+
+		// Parse feature-level progressive rollout
+		if feature.RolloutConfiguration != nil {
+			rolloutMap, err := utils.ParseRolloutConfigurationPhases(feature.RolloutConfiguration)
+			if err != nil {
+				log.Error("Error parsing feature rollout configuration: ", err.Error())
+			} else {
+				rolloutConfigMap[feature.GetFeatureID()] = rolloutMap
+			}
+		}
+
+		// Parse segment-level progressive rollout
+		if len(feature.SegmentRules) > 0 {
+			for _, segmentRule := range feature.SegmentRules {
+				if segmentRule.RolloutConfiguration != nil {
+					rolloutMap, err := utils.ParseRolloutConfigurationPhases(segmentRule.RolloutConfiguration)
+					if err != nil {
+						log.Error("Error parsing segment rule rollout configuration: ", err.Error())
+					} else {
+						key := feature.GetFeatureID() + constants.Delimiter + segmentRule.GetRuleID()
+						rolloutConfigMap[key] = rolloutMap
+					}
+				}
+			}
+		}
 	}
 
 	propertyMap := make(map[string]models.Property)
@@ -176,7 +204,7 @@ func (ch *ConfigurationHandler) saveInCache(data []byte) {
 		segmentMap[segment.GetSegmentID()] = segment
 	}
 	log.Debug(messages.SetInMemoryCache)
-	models.SetCache(featureMap, propertyMap, segmentMap)
+	models.SetCache(featureMap, propertyMap, segmentMap, rolloutConfigMap)
 	ch.cache = models.GetCacheInstance()
 }
 func (ch *ConfigurationHandler) updateCacheAndListener(data []byte) {

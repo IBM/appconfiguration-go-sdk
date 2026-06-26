@@ -18,7 +18,9 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
@@ -45,64 +47,86 @@ type CollectionUsages struct {
 	Usages        []Usages `json:"usages"`
 }
 
-type featureMetric struct {
-	count          int64
-	evaluationTime string
+type meteringRecord struct {
+	count      int64
+	latestTime atomic.Value
 }
 
-// Metering : Metering struct
+func newMeteringRecord(timestamp string) *meteringRecord {
+	record := &meteringRecord{count: 1}
+	record.latestTime.Store(timestamp)
+	return record
+}
+
+func (mr *meteringRecord) increment(newTime string) {
+	atomic.AddInt64(&mr.count, 1)
+	for {
+		currentTime := mr.latestTime.Load().(string)
+		if newTime > currentTime {
+			if mr.latestTime.CompareAndSwap(currentTime, newTime) {
+				break
+			}
+		} else {
+			break
+		}
+	}
+}
+
+func (mr *meteringRecord) getCount() int64 {
+	return atomic.LoadInt64(&mr.count)
+}
+
+func (mr *meteringRecord) getLatestTime() string {
+	return mr.latestTime.Load().(string)
+}
+
 type Metering struct {
 	CollectionID         string
 	EnvironmentID        string
 	guid                 string
 	mu                   sync.Mutex
-	meteringFeatureData  map[string]map[string]map[string]map[string]map[string]map[string]featureMetric //guid->EnvironmentID->CollectionID->featureId->entityId->segmentId
-	meteringPropertyData map[string]map[string]map[string]map[string]map[string]map[string]featureMetric //guid->EnvironmentID->CollectionID->propertyId->entityId->segmentId
+	meteringFeatureData  map[string]*meteringRecord
+	meteringPropertyData map[string]*meteringRecord
 }
+
+// Delimiter for building key by joining strings
+const delimiter = "\u001F"
 
 // SendInterval : SendInterval struct
 const SendInterval = "10m"
 
 var meteringInstance *Metering
 
-// GetMeteringInstance : Get Metering Instance
 func GetMeteringInstance() *Metering {
 	log.Debug(messages.RetrieveMeteringInstance)
 	if meteringInstance == nil {
 		meteringInstance = &Metering{}
-		guidFeatureMap := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
-		guidPropertyMap := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
-		meteringInstance.meteringFeatureData = guidFeatureMap
-		meteringInstance.meteringPropertyData = guidPropertyMap
-		// start sending metering data in the background
+		meteringInstance.meteringFeatureData = make(map[string]*meteringRecord)
+		meteringInstance.meteringPropertyData = make(map[string]*meteringRecord)
 		log.Debug(messages.StartSendingMeteringData)
 		c := cron.New()
 		c.AddFunc("@every "+SendInterval, meteringInstance.sendMetering)
 		c.Start()
-
 	}
 	return meteringInstance
 }
 
-// Init : Init
 func (mt *Metering) Init(guid string, environmentID string, collectionID string) {
 	mt.guid = guid
 	mt.EnvironmentID = environmentID
 	mt.CollectionID = collectionID
 }
 
-func (mt *Metering) addMetering(guid string, environmentID string, collectionID string, entityID string, segmentID string, featureID string, propertyID string) {
+func (mt *Metering) addMetering(entityID string, segmentID string, featureID string, propertyID string) {
 	log.Debug(messages.AddMetering)
 	defer GracefullyHandleError()
-	mt.mu.Lock()
+
 	t := time.Now().UTC()
 	formattedTime := fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02dZ",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
-	var fm featureMetric
-	fm.evaluationTime = formattedTime
-	fm.count = 1
-	meteringData := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
+
+	var meteringData map[string]*meteringRecord
 	var modifyKey string
 	if featureID != "" {
 		meteringData = meteringInstance.meteringFeatureData
@@ -111,167 +135,94 @@ func (mt *Metering) addMetering(guid string, environmentID string, collectionID 
 		meteringData = meteringInstance.meteringPropertyData
 		modifyKey = propertyID
 	}
-	if _, ok := meteringData[guid]; ok {
-		guidVal := meteringData[guid]
-		if _, ok := guidVal[environmentID]; ok {
-			envIDVal := guidVal[environmentID]
-			if _, ok := envIDVal[collectionID]; ok {
-				collectionIDVal := envIDVal[collectionID]
-				if _, ok := collectionIDVal[modifyKey]; ok {
-					modifyKeyVal := collectionIDVal[modifyKey]
-					if _, ok := modifyKeyVal[entityID]; ok {
-						entityIDVal := modifyKeyVal[entityID]
-						if _, ok := entityIDVal[segmentID]; ok {
-							segmentIDVal := entityIDVal[segmentID]
-							segmentIDVal.evaluationTime = formattedTime
-							segmentIDVal.count = segmentIDVal.count + 1
-							entityIDVal[segmentID] = segmentIDVal
-						} else {
-							entityIDVal[segmentID] = fm
-						}
-					} else {
-						segmentMap := make(map[string]featureMetric)
-						segmentMap[segmentID] = fm
-						modifyKeyVal[entityID] = segmentMap
-					}
-				} else {
-					segmentMap := make(map[string]featureMetric)
-					entityMap := make(map[string]map[string]featureMetric)
-					segmentMap[segmentID] = fm
-					entityMap[entityID] = segmentMap
-					collectionIDVal[modifyKey] = entityMap
-				}
-			} else {
-				segmentMap := make(map[string]featureMetric)
-				entityMap := make(map[string]map[string]featureMetric)
-				modifyKeyMap := make(map[string]map[string]map[string]featureMetric)
-				segmentMap[segmentID] = fm
-				entityMap[entityID] = segmentMap
-				modifyKeyMap[modifyKey] = entityMap
-				envIDVal[collectionID] = modifyKeyMap
-			}
-		} else {
-			segmentMap := make(map[string]featureMetric)
-			entityMap := make(map[string]map[string]featureMetric)
-			modifyKeyMap := make(map[string]map[string]map[string]featureMetric)
-			collectionMap := make(map[string]map[string]map[string]map[string]featureMetric)
-			segmentMap[segmentID] = fm
-			entityMap[entityID] = segmentMap
-			modifyKeyMap[modifyKey] = entityMap
-			collectionMap[collectionID] = modifyKeyMap
-			guidVal[environmentID] = collectionMap
-		}
+
+	key := buildCompositeKey(modifyKey, entityID, segmentID)
+	
+	mt.mu.Lock()
+	record, exists := meteringData[key]
+	if exists {
+		mt.mu.Unlock()
+		record.increment(formattedTime)
 	} else {
-		segmentMap := make(map[string]featureMetric)
-		entityMap := make(map[string]map[string]featureMetric)
-		modifyKeyMap := make(map[string]map[string]map[string]featureMetric)
-		collectionMap := make(map[string]map[string]map[string]map[string]featureMetric)
-		environmentMap := make(map[string]map[string]map[string]map[string]map[string]featureMetric)
-		segmentMap[segmentID] = fm
-		entityMap[entityID] = segmentMap
-		modifyKeyMap[modifyKey] = entityMap
-		collectionMap[collectionID] = modifyKeyMap
-		environmentMap[environmentID] = collectionMap
-		meteringData[guid] = environmentMap
+		meteringData[key] = newMeteringRecord(formattedTime)
+		mt.mu.Unlock()
 	}
-	mt.mu.Unlock()
 }
 
-// RecordEvaluation : Record Evaluation
 func (mt *Metering) RecordEvaluation(featureID string, propertyID string, entityID string, segmentID string) {
 	log.Debug(messages.RecordEval)
-	mt.addMetering(mt.guid, mt.EnvironmentID, mt.CollectionID, entityID, segmentID, featureID, propertyID)
+	mt.addMetering(entityID, segmentID, featureID, propertyID)
 }
-func (mt *Metering) buildRequestBody(sendMeteringData map[string]map[string]map[string]map[string]map[string]map[string]featureMetric, guidMap map[string][]CollectionUsages, key string) {
 
-	for guid, environmentMap := range sendMeteringData {
-		var collectionUsageArray []CollectionUsages
-		if _, ok := guidMap[guid]; !ok {
-			guidMap[guid] = collectionUsageArray
+func (mt *Metering) buildRequestBody(sendMeteringData map[string]*meteringRecord, collectionUsages *CollectionUsages, resourceType string) {
+	for key, record := range sendMeteringData {
+		keyParts := parseCompositeKey(key)
+		if len(keyParts) != 3 {
+			log.Error("Invalid composite key format: expected 3 parts, got ", len(keyParts))
+			continue
 		}
-		for environmentID, collectionMap := range environmentMap {
-			for collectionID, featureMap := range collectionMap {
-				var usagesArray []Usages
-				for featureID, entityMap := range featureMap {
-					for entityID, segmentMap := range entityMap {
-						for segmentID, val := range segmentMap {
-							var usages Usages
-							if key == "feature_id" {
-								usages.FeatureID = featureID
-							} else {
-								usages.PropertyID = featureID
-							}
-							if entityID == constants.DefaultEntityID {
-								usages.EntityID = nil
-							} else {
-								usages.EntityID = entityID
-							}
-							if segmentID == constants.DefaultSegmentID {
-								usages.SegmentID = nil
-							} else {
-								usages.SegmentID = segmentID
-							}
-							usages.EvaluationTime = val.evaluationTime
-							usages.Count = val.count
-							usagesArray = append(usagesArray, usages)
-						}
-					}
-				}
-				var collectionUsageElem CollectionUsages
-				collectionUsageElem.CollectionID = collectionID
-				collectionUsageElem.EnvironmentID = environmentID
-				collectionUsageElem.Usages = usagesArray
-				collectionUsageArray = append(collectionUsageArray, collectionUsageElem)
-			}
+		var entityId interface{} = nil
+		if keyParts[1] != "" && keyParts[1] != constants.DefaultEntityID {
+			entityId = keyParts[1]
 		}
-		guidMap[guid] = append(guidMap[guid], collectionUsageArray...)
+		var segmentId interface{} = nil
+		if keyParts[2] != "" && keyParts[2] != constants.DefaultSegmentID {
+			segmentId = keyParts[2]
+		}
+		usages := Usages{
+			EntityID:       entityId,
+			SegmentID:      segmentId,
+			EvaluationTime: record.getLatestTime(),
+			Count:          record.getCount(),
+		}
+		if resourceType == "feature_id" {
+			usages.FeatureID = keyParts[0]
+		} else {
+			usages.PropertyID = keyParts[0]
+		}
+		collectionUsages.Usages = append(collectionUsages.Usages, usages)
 	}
 }
+
 func (mt *Metering) sendMetering() {
 	log.Debug(messages.TenMinExpiry)
 	defer GracefullyHandleError()
-	log.Debug(mt.meteringFeatureData)
-	log.Debug(mt.meteringPropertyData)
+
 	mt.mu.Lock()
-	if len(mt.meteringFeatureData) <= 0 && len(mt.meteringPropertyData) <= 0 {
-		mt.mu.Unlock()
-		return
-	}
-	sendFeatureData := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
-	sendFeatureData = mt.meteringFeatureData
-	meteringFeatureDataMap := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
-	mt.meteringFeatureData = meteringFeatureDataMap
-
-	sendPropertyData := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
-	sendPropertyData = mt.meteringPropertyData
-	meteringPropertyDataMap := make(map[string]map[string]map[string]map[string]map[string]map[string]featureMetric)
-	mt.meteringPropertyData = meteringPropertyDataMap
-
+	currentFeatureData := mt.meteringFeatureData
+	currentPropertyData := mt.meteringPropertyData
+	mt.meteringFeatureData = make(map[string]*meteringRecord)
+	mt.meteringPropertyData = make(map[string]*meteringRecord)
 	mt.mu.Unlock()
 
-	guidMap := make(map[string][]CollectionUsages)
-
-	if len(sendFeatureData) > 0 {
-		mt.buildRequestBody(sendFeatureData, guidMap, "feature_id")
+	log.Debug(currentFeatureData)
+	log.Debug(currentPropertyData)
+	
+	if len(currentFeatureData) == 0 && len(currentPropertyData) == 0 {
+		return
 	}
 
-	if len(sendPropertyData) > 0 {
-		mt.buildRequestBody(sendPropertyData, guidMap, "property_id")
+	collectionUsages := CollectionUsages{
+		CollectionID:  mt.CollectionID,
+		EnvironmentID: mt.EnvironmentID,
+		Usages:        []Usages{},
+	}
+	
+	if len(currentFeatureData) > 0 {
+		mt.buildRequestBody(currentFeatureData, &collectionUsages, "feature_id")
+	}
+	if len(currentPropertyData) > 0 {
+		mt.buildRequestBody(currentPropertyData, &collectionUsages, "property_id")
 	}
 
-	for guid, val := range guidMap {
-		for _, collectionUsage := range val {
-			var count int = len(collectionUsage.Usages)
-			if count > constants.DefaultUsageLimit {
-				mt.sendSplitMetering(guid, collectionUsage, count)
-			} else {
-				mt.sendToServer(guid, collectionUsage)
-			}
-		}
+	count := len(collectionUsages.Usages)
+	if count > constants.DefaultUsageLimit {
+		mt.sendSplitMetering(collectionUsages, count)
+	} else {
+		mt.sendToServer(collectionUsages)
 	}
-
 }
-func (mt *Metering) sendSplitMetering(guid string, collectionUsages CollectionUsages, count int) {
+func (mt *Metering) sendSplitMetering(collectionUsages CollectionUsages, count int) {
 	var lim int = 0
 	subUsages := collectionUsages.Usages
 	for lim < count {
@@ -287,11 +238,11 @@ func (mt *Metering) sendSplitMetering(guid string, collectionUsages CollectionUs
 		for i := lim; i < endIndex; i++ {
 			collectionUsageElem.Usages = append(collectionUsageElem.Usages, subUsages[i])
 		}
-		mt.sendToServer(guid, collectionUsageElem)
+		mt.sendToServer(collectionUsageElem)
 		lim = lim + constants.DefaultUsageLimit
 	}
 }
-func (mt *Metering) sendToServer(guid string, collectionUsages CollectionUsages) {
+func (mt *Metering) sendToServer(collectionUsages CollectionUsages) {
 	log.Debug(messages.SendMeteringServer)
 	log.Debug(collectionUsages)
 	builder := core.NewRequestBuilder(core.POST)
@@ -314,19 +265,30 @@ func (mt *Metering) sendToServer(guid string, collectionUsages CollectionUsages)
 		log.Debug(messages.SendMeteringSuccess)
 	} else {
 		// [first] Log the accurate reason
-		if response != nil {
+		if err != nil {
 			log.Error(messages.SendMeteringServerErr + err.Error())
 		} else {
-			log.Error(messages.SendMeteringServerErr + err.Error())
+			log.Error(messages.SendMeteringServerErr)
 		}
-		// [then] schedule a function to send the same payload after 10 minutes
-		statusCode := response.StatusCode
-		if statusCode == 429 || (statusCode >= 500 && statusCode <= 599) {
+		statusCode := -1
+		if response != nil {
+			statusCode = response.StatusCode
+		}
+		// status code -1 represents response has been failed to form else check the retry cases
+		if statusCode == -1 || statusCode == 429 || (statusCode >= 500 && statusCode <= 599) {
+			// schedule a function to send the same payload after 10 minutes
 			minutes, _ := time.ParseDuration(SendInterval)
 			time.AfterFunc(time.Second*time.Duration(minutes.Seconds()), func() {
-				mt.sendToServer(guid, collectionUsages)
+				mt.sendToServer(collectionUsages)
 			})
 		}
-
 	}
+}
+
+func buildCompositeKey(modifyKey, entityID, segmentID string) string {
+	return strings.Join([]string{modifyKey, entityID, segmentID}, delimiter)
+}
+
+func parseCompositeKey(compositeKey string) []string {
+	return strings.SplitN(compositeKey, delimiter, 3)
 }

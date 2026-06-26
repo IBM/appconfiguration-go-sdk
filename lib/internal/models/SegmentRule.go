@@ -16,6 +16,11 @@
 
 package models
 
+import (
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
+	utils "github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
+)
+
 // RuleElem : RuleElem struct
 type RuleElem struct {
 	Segments []string `json:"segments"`
@@ -23,10 +28,22 @@ type RuleElem struct {
 
 // SegmentRule : SegmentRule struct
 type SegmentRule struct {
-	Rules             []RuleElem   `json:"rules"`
-	Value             interface{}  `json:"value"`
-	Order             int          `json:"order"`
-	RolloutPercentage *interface{} `json:"rollout_percentage"`
+	Rules                []RuleElem                  `json:"rules"`
+	Value                interface{}                 `json:"value"`
+	Order                int                         `json:"order"`
+	RolloutPercentage    *interface{}                `json:"rollout_percentage"`
+	RuleID               *string                     `json:"rule_id,omitempty"`
+	RolloutType          string                      `json:"rollout_type,omitempty"`
+	RolloutConfiguration *utils.RolloutConfiguration `json:"rollout_configuration,omitempty"`
+}
+
+// GetRuleID : Get Rule ID
+func (sr *SegmentRule) GetRuleID() string {
+	if sr.RuleID == nil {
+		return ""
+	} else {
+		return *sr.RuleID
+	}
 }
 
 // GetRules : Get Rules
@@ -51,4 +68,13 @@ func (sr *SegmentRule) GetRolloutPercentage() interface{} {
 		sr.RolloutPercentage = &v
 	}
 	return *sr.RolloutPercentage
+}
+
+// GetRolloutType : Get Rollout Type of Segment Rule
+func (sr *SegmentRule) GetRolloutType() string {
+	if sr.RolloutType == "" {
+		return constants.Manual
+	} else {
+		return sr.RolloutType
+	}
 }

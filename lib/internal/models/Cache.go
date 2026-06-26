@@ -18,6 +18,7 @@ package models
 
 import (
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/emirpasic/gods/maps/treemap"
 )
 
 // Cache : Cache struct
@@ -26,18 +27,20 @@ type Cache struct {
 	PropertyMap      map[string]Property
 	SegmentMap       map[string]Segment
 	SecretManagerMap map[string]interface{}
+	RolloutConfigMap map[string]*treemap.Map
 }
 
 // CacheInstance : Cache Instance
 var CacheInstance *Cache
 
 // SetCache : Set Cache
-func SetCache(featureMap map[string]Feature, propertyMap map[string]Property, segmentMap map[string]Segment) {
+func SetCache(featureMap map[string]Feature, propertyMap map[string]Property, segmentMap map[string]Segment, rolloutConfigMap map[string]*treemap.Map) {
 	CacheInstance = new(Cache)
 	CacheInstance.FeatureMap = featureMap
 	CacheInstance.PropertyMap = propertyMap
 	CacheInstance.SegmentMap = segmentMap
 	CacheInstance.SecretManagerMap = make(map[string]interface{})
+	CacheInstance.RolloutConfigMap = rolloutConfigMap
 	log.Debug(CacheInstance)
 }
 

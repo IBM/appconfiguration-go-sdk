@@ -23,10 +23,10 @@ const DefaultSegmentID = "$$null$$"
 const DefaultEntityID = "$$null$$"
 
 // DefaultUsageLimit : Default Usage Limit
-const DefaultUsageLimit = 10
+const DefaultUsageLimit = 30
 
 // UserAgent specifies the user agent name
-const UserAgent = "appconfiguration-go-sdk/0.5.10"
+const UserAgent = "appconfiguration-go-sdk/0.5.11"
 
 // ConfigurationFile : Name of file to which configurations will be written
 const ConfigurationFile = "appconfiguration.json"
@@ -36,3 +36,12 @@ const MaxNumberOfRetries = 3
 
 // MaxRetryInterval : Maximum duration between successive retries (in seconds)
 const MaxRetryInterval = 30
+
+// Manual : Manual rollout type
+const Manual = "MANUAL"
+
+// Progressive : Progressive rollout type
+const Progressive = "PROGRESSIVE"
+
+// Delimiter : Delimiter for composite keys
+const Delimiter = "\u001F"
