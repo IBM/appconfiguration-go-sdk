@@ -24,19 +24,22 @@ import (
 	"sort"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/emirpasic/gods/maps/treemap"
 )
 
 // Feature : Feature struct
 type Feature struct {
-	Name              string        `json:"name"`
-	FeatureID         string        `json:"feature_id"`
-	DataType          string        `json:"type"`
-	Format            string        `json:"format"`
-	EnabledValue      interface{}   `json:"enabled_value"`
-	DisabledValue     interface{}   `json:"disabled_value"`
-	SegmentRules      []SegmentRule `json:"segment_rules"`
-	Enabled           bool          `json:"enabled"`
-	RolloutPercentage *int          `json:"rollout_percentage"`
+	Name                 string                      `json:"name"`
+	FeatureID            string                      `json:"feature_id"`
+	DataType             string                      `json:"type"`
+	Format               string                      `json:"format"`
+	EnabledValue         interface{}                 `json:"enabled_value"`
+	DisabledValue        interface{}                 `json:"disabled_value"`
+	SegmentRules         []SegmentRule               `json:"segment_rules"`
+	Enabled              bool                        `json:"enabled"`
+	RolloutPercentage    *int                        `json:"rollout_percentage"`
+	RolloutType          string                      `json:"rollout_type,omitempty"`
+	RolloutConfiguration *utils.RolloutConfiguration `json:"rollout_configuration,omitempty"`
 }
 
 // GetFeatureName : Get Feature Name
@@ -169,11 +172,32 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 						if f.evaluateSegment(string(segmentKey), entityAttributes) {
 							evaluatedSegmentID = segmentKey
 							var segmentLevelRolloutPercentage int
-							if segmentRule.GetRolloutPercentage() == "$default" {
-								segmentLevelRolloutPercentage = f.GetRolloutPercentage()
+
+							if segmentRule.RolloutConfiguration != nil || segmentRule.GetRolloutType() == constants.Progressive {
+								var rolloutMap *treemap.Map
+								if segmentRule.GetRolloutPercentage() == "$default" {
+									// Use feature-level rollout configuration
+									rolloutMap = GetCacheInstance().RolloutConfigMap[f.GetFeatureID()]
+								} else {
+									// Use segment-level rollout configuration
+									key := f.GetFeatureID() + constants.Delimiter + segmentRule.GetRuleID()
+									rolloutMap = GetCacheInstance().RolloutConfigMap[key]
+								}
+								if rolloutMap != nil {
+									entityID += segmentRule.RolloutConfiguration.StartAt
+									segmentLevelRolloutPercentage = utils.GetCurrentRolloutPercentage(rolloutMap)
+								} else {
+									segmentLevelRolloutPercentage = 0
+								}
 							} else {
-								segmentLevelRolloutPercentage = int(segmentRule.GetRolloutPercentage().(float64))
+								// Use manual rollout percentage
+								if segmentRule.GetRolloutPercentage() == "$default" {
+									segmentLevelRolloutPercentage = f.GetRolloutPercentage()
+								} else {
+									segmentLevelRolloutPercentage = int(segmentRule.GetRolloutPercentage().(float64))
+								}
 							}
+
 							if segmentLevelRolloutPercentage == 100 || GetNormalizedValue(entityID+":"+f.GetFeatureID()) < segmentLevelRolloutPercentage {
 								if segmentRule.GetValue() == "$default" {
 									return f.GetEnabledValue(), true
@@ -188,7 +212,22 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 				}
 			}
 		}
-		if f.GetRolloutPercentage() == 100 || GetNormalizedValue(entityID+":"+f.GetFeatureID()) < f.GetRolloutPercentage() {
+
+		// Check feature-level rollout
+		var rolloutPercentage int
+		if f.RolloutConfiguration != nil {
+			rolloutMap := GetCacheInstance().RolloutConfigMap[f.GetFeatureID()]
+			if rolloutMap != nil {
+				entityID += f.RolloutConfiguration.StartAt
+				rolloutPercentage = utils.GetCurrentRolloutPercentage(rolloutMap)
+			} else {
+				rolloutPercentage = 0
+			}
+		} else {
+			rolloutPercentage = f.GetRolloutPercentage()
+		}
+
+		if rolloutPercentage == 100 || GetNormalizedValue(entityID+":"+f.GetFeatureID()) < rolloutPercentage {
 			return f.GetEnabledValue(), true
 		}
 		return f.GetDisabledValue(), false

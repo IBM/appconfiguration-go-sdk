@@ -17,11 +17,12 @@
 package models
 
 import (
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"github.com/sirupsen/logrus/hooks/test"
 	"reflect"
 	"testing"
 
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
+	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -105,7 +106,8 @@ func TestCacheWithDebugMode(t *testing.T) {
 	propertyMap := make(map[string]Property)
 	propertyMap["propertyID"] = property
 	propertyMap["propertySecretDataId"] = propertySecretRefData
-	SetCache(featureMap, propertyMap, segmentMap)
+	rolloutConfigMap := make(map[string]*treemap.Map)
+	SetCache(featureMap, propertyMap, segmentMap, rolloutConfigMap)
 	cacheInstance := GetCacheInstance()
 	if !reflect.DeepEqual(cacheInstance.FeatureMap, featureMap) {
 		t.Error("Expected TestCacheFeatureMap test case to pass")

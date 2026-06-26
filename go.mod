@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/IBM/go-sdk-core/v5 v5.21.2
 	github.com/IBM/secrets-manager-go-sdk/v2 v2.0.5
+	github.com/emirpasic/gods v1.18.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.9.3

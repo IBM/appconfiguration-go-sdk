@@ -49,128 +49,56 @@ func TestMeteringInit(t *testing.T) {
 
 }
 
+const guid, env, col, ent, seg, feat, prop = "guid", "dev", "c1", "e1", "s1", "f1", "p1"
+
 func TestAddMetering(t *testing.T) {
 	// test add metering when the meteringFeatureData is empty and first recording of the evaluation is done
 	m := GetMeteringInstance()
-	m.Init("guid", "dev", "c1")
+	m.Init(guid, env, col)
 	assert.Equal(t, 0, len(m.meteringFeatureData))
-	m.addMetering("guid", "dev", "c1", "e1", "s1", "f1", "p1")
+
+	m.addMetering(ent, seg, feat, prop)
 	assert.Equal(t, 1, len(m.meteringFeatureData))
-	guidVal := m.meteringFeatureData["guid"]
-
-	envtVal := guidVal["dev"]
-
-	collectionVal := envtVal["c1"]
-
-	featureVal := collectionVal["f1"]
-
-	entityVal := featureVal["e1"]
-
-	segmentVal := entityVal["s1"]
-
-	assert.Equal(t, int64(1), segmentVal.count)
+	record := m.meteringFeatureData[buildCompositeKey(feat, ent, seg)]
+	assert.Equal(t, int64(1), record.getCount())
 
 	// when the evaluation is done for the second time for the same feature against the same entity and segment
 
-	m.addMetering("guid", "dev", "c1", "e1", "s1", "f1", "p1")
-
-	guidVal = m.meteringFeatureData["guid"]
-
-	envtVal = guidVal["dev"]
-
-	collectionVal = envtVal["c1"]
-
-	featureVal = collectionVal["f1"]
-
-	entityVal = featureVal["e1"]
-
-	segmentVal = entityVal["s1"]
-	assert.Equal(t, int64(2), segmentVal.count)
+	m.addMetering(ent, seg, feat, prop)
+	record = m.meteringFeatureData[buildCompositeKey(feat, ent, seg)]
+	assert.Equal(t, int64(2), record.getCount())
 
 	// when the evaluation is done  for the same feature against the same entity but different segment
 
-	m.addMetering("guid", "dev", "c1", "e1", "s2", "f1", "p1")
-
-	guidVal = m.meteringFeatureData["guid"]
-
-	envtVal = guidVal["dev"]
-
-	collectionVal = envtVal["c1"]
-
-	featureVal = collectionVal["f1"]
-
-	entityVal = featureVal["e1"]
-
-	segmentVal = entityVal["s2"]
-	assert.Equal(t, int64(1), segmentVal.count)
+	m.addMetering(ent, "s2", feat, prop)
+	record = m.meteringFeatureData[buildCompositeKey(feat, ent, "s2")]
+	assert.Equal(t, int64(1), record.getCount())
 
 	// when the evaluation is done  for the same feature against but different entity
 
-	m.addMetering("guid", "dev", "c1", "e2", "s1", "f1", "p1")
-
-	guidVal = m.meteringFeatureData["guid"]
-
-	envtVal = guidVal["dev"]
-
-	collectionVal = envtVal["c1"]
-
-	featureVal = collectionVal["f1"]
-
-	entityVal = featureVal["e2"]
-
-	segmentVal = entityVal["s1"]
-	assert.Equal(t, int64(1), segmentVal.count)
+	m.addMetering("e2", seg, feat, prop)
+	record = m.meteringFeatureData[buildCompositeKey(feat, "e2", seg)]
+	assert.Equal(t, int64(1), record.getCount())
 
 	// when the evaluation is done  for different feature but same collection
 
-	m.addMetering("guid", "dev", "c1", "e2", "s1", "f2", "p1")
-
-	guidVal = m.meteringFeatureData["guid"]
-
-	envtVal = guidVal["dev"]
-
-	collectionVal = envtVal["c1"]
-
-	featureVal = collectionVal["f2"]
-
-	entityVal = featureVal["e2"]
-
-	segmentVal = entityVal["s1"]
-	assert.Equal(t, int64(1), segmentVal.count)
+	m.addMetering(ent, seg, "f2", prop)
+	record = m.meteringFeatureData[buildCompositeKey("f2", ent, seg)]
+	assert.Equal(t, int64(1), record.getCount())
 
 	// when the evaluation is done  for different collection but same environment
+	// Note: With simplified keys, collection changes don't affect the key
 
-	m.addMetering("guid", "dev", "c2", "e2", "s1", "f2", "p1")
-
-	guidVal = m.meteringFeatureData["guid"]
-
-	envtVal = guidVal["dev"]
-
-	collectionVal = envtVal["c2"]
-
-	featureVal = collectionVal["f2"]
-
-	entityVal = featureVal["e2"]
-
-	segmentVal = entityVal["s1"]
-	assert.Equal(t, int64(1), segmentVal.count)
+	m.addMetering("e2", seg, "f2", prop)
+	record = m.meteringFeatureData[buildCompositeKey("f2", "e2", seg)]
+	assert.Equal(t, int64(1), record.getCount())
 
 	// when the evaluation is done  for different environment but same guid
+	// Note: With simplified keys, environment changes don't affect the key
 
-	m.addMetering("guid", "prod", "c2", "e2", "s1", "f2", "p1")
-
-	guidVal = m.meteringFeatureData["guid"]
-
-	envtVal = guidVal["prod"]
-
-	collectionVal = envtVal["c2"]
-
-	featureVal = collectionVal["f2"]
-
-	entityVal = featureVal["e2"]
-
-	segmentVal = entityVal["s1"]
-	assert.Equal(t, int64(1), segmentVal.count)
+	m.addMetering("e2", seg, "f2", prop)
+	record = m.meteringFeatureData[buildCompositeKey("f2", "e2", seg)]
+	assert.Equal(t, int64(2), record.getCount()) // Should increment existing record
 
 	resetMeteringInstance()
 }
@@ -178,30 +106,19 @@ func TestAddMetering(t *testing.T) {
 func TestBuildRequestBody(t *testing.T) {
 	// when request body contains only features evaluations
 	m := GetMeteringInstance()
-	m.Init("guid", "dev", "c1")
+	m.Init(guid, env, col)
 	assert.Equal(t, 0, len(m.meteringFeatureData))
-	m.addMetering("guid", "dev", "c1", "e1", "s1", "f1", "p1")
-	m.addMetering("guid", "dev", "c1", "e1", "s1", "f1", "p1")
+	m.addMetering(ent, seg, feat, prop)
+	m.addMetering(ent, seg, feat, prop)
 
 	assert.Equal(t, 1, len(m.meteringFeatureData))
-	guidVal := m.meteringFeatureData["guid"]
+	record := m.meteringFeatureData[buildCompositeKey(feat, ent, seg)]
+	assert.Equal(t, int64(2), record.getCount())
+	collectionsUsages := CollectionUsages{}
+	assert.Equal(t, 0, len(collectionsUsages.Usages))
 
-	envtVal := guidVal["dev"]
-
-	collectionVal := envtVal["c1"]
-
-	featureVal := collectionVal["f1"]
-
-	entityVal := featureVal["e1"]
-
-	segmentVal := entityVal["s1"]
-
-	assert.Equal(t, int64(2), segmentVal.count)
-	guidMap := make(map[string][]CollectionUsages)
-	assert.Equal(t, 0, len(guidMap))
-
-	m.buildRequestBody(m.meteringFeatureData, guidMap, "feature_id")
-	assert.Equal(t, int64(2), guidMap["guid"][0].Usages[0].Count)
+	m.buildRequestBody(m.meteringFeatureData, &collectionsUsages, "feature_id")
+	assert.Equal(t, int64(2), collectionsUsages.Usages[0].Count)
 	resetMeteringInstance()
 
 }
@@ -228,29 +145,18 @@ func TestSendToServer(t *testing.T) {
 	urlBuilderInstance.SetAuthenticator(&core.NoAuthAuthenticator{})
 
 	assert.Equal(t, 0, len(m.meteringFeatureData))
-	m.addMetering("guid", "dev", "c1", "e1", "s1", "f1", "p1")
-	m.addMetering("guid", "dev", "c1", "e1", "s1", "f1", "p1")
+	m.addMetering(ent, seg, feat, prop)
+	m.addMetering(ent, seg, feat, prop)
 
 	assert.Equal(t, 1, len(m.meteringFeatureData))
-	guidVal := m.meteringFeatureData["guid"]
+	record := m.meteringFeatureData[buildCompositeKey(feat, ent, seg)]
+	assert.Equal(t, int64(2), record.getCount())
+	collectionsUsages := CollectionUsages{}
+	assert.Equal(t, 0, len(collectionsUsages.Usages))
 
-	envtVal := guidVal["dev"]
-
-	collectionVal := envtVal["c1"]
-
-	featureVal := collectionVal["f1"]
-
-	entityVal := featureVal["e1"]
-
-	segmentVal := entityVal["s1"]
-
-	assert.Equal(t, int64(2), segmentVal.count)
-	guidMap := make(map[string][]CollectionUsages)
-	assert.Equal(t, 0, len(guidMap))
-
-	m.buildRequestBody(m.meteringFeatureData, guidMap, "feature_id")
-	assert.Equal(t, int64(2), guidMap["guid"][0].Usages[0].Count)
-	m.sendToServer("guid", guidMap["guid"][0])
+	m.buildRequestBody(m.meteringFeatureData, &collectionsUsages, "feature_id")
+	assert.Equal(t, int64(2), collectionsUsages.Usages[0].Count)
+	m.sendToServer(collectionsUsages)
 	if hook.LastEntry().Message != "AppConfiguration - Successfully sent metering data to server." {
 		t.Errorf("Test failed: Incorrect error message")
 	}
@@ -271,7 +177,7 @@ func TestSendToServer(t *testing.T) {
 		httpBase: ts.URL,
 	}
 	urlBuilderInstance.SetAuthenticator(&core.NoAuthAuthenticator{})
-	m.sendToServer("guid", guidMap["guid"][0])
+	m.sendToServer(collectionsUsages)
 	if hook.LastEntry().Message != "AppConfiguration - Error while sending metering data to server. Internal Server Error" {
 		t.Errorf("Test failed: Incorrect error message -->")
 	}
