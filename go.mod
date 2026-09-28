@@ -1,6 +1,6 @@
 module github.com/IBM/appconfiguration-go-sdk
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/IBM/go-sdk-core/v5 v5.21.2
@@ -31,10 +31,10 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.6 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
