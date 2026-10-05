@@ -18,11 +18,13 @@ package lib
 
 import (
 	"errors"
+	"path/filepath"
+	"sync"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
-	"path/filepath"
 )
 
 // AppConfiguration : Struct having init and configInstance.
@@ -39,7 +41,10 @@ type ContextOptions struct {
 	LiveConfigUpdateEnabled  bool
 }
 
-var appConfigurationInstance *AppConfiguration
+var (
+	appConfigurationInstance *AppConfiguration
+	appConfigurationOnce     sync.Once
+)
 
 var overrideServiceUrl = ""
 
@@ -74,10 +79,16 @@ const REGION_JP_OSA = "jp-osa"
 // GetInstance : Get App Configuration Instance
 func GetInstance() *AppConfiguration {
 	log.Debug(messages.RetrieveingAppConfig)
-	if appConfigurationInstance == nil {
+	appConfigurationOnce.Do(func() {
 		appConfigurationInstance = new(AppConfiguration)
-	}
+	})
 	return appConfigurationInstance
+}
+
+// note: should be used for testing purposes only
+func ResetAppConfigurationInstance() {
+	appConfigurationInstance = nil
+	appConfigurationOnce = sync.Once{}
 }
 
 // IsConnected method returns the server-client connection status as a boolean

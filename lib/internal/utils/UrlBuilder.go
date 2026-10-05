@@ -17,9 +17,11 @@
 package utils
 
 import (
-	"github.com/IBM/go-sdk-core/v5/core"
 	"net/http"
 	"strings"
+	"sync"
+
+	"github.com/IBM/go-sdk-core/v5/core"
 )
 
 // URLBuilder : URLBuilder struct
@@ -38,11 +40,14 @@ type URLBuilder struct {
 	authenticator         core.Authenticator
 }
 
-var urlBuilderInstance *URLBuilder
+var (
+	urlBuilderInstance *URLBuilder
+	urlBuilderOnce     sync.Once
+)
 
 // GetInstance : Get Instance
 func GetInstance() *URLBuilder {
-	if urlBuilderInstance == nil {
+	urlBuilderOnce.Do(func() {
 		urlBuilderInstance = &URLBuilder{
 			baseURL:               ".apprapp.cloud.ibm.com",
 			privateEndpointPrefix: "private.",
@@ -56,8 +61,14 @@ func GetInstance() *URLBuilder {
 			region:                "",
 			guid:                  "",
 		}
-	}
+	})
 	return urlBuilderInstance
+}
+
+// used only for testing
+func ResetURLBuilderInstance() {
+	urlBuilderInstance = nil
+	urlBuilderOnce = sync.Once{}
 }
 
 // Init : Init

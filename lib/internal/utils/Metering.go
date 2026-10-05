@@ -95,20 +95,30 @@ const delimiter = "\u001F"
 // SendInterval : SendInterval struct
 const SendInterval = "10m"
 
-var meteringInstance *Metering
+var (
+	meteringInstance *Metering
+	meteringOnce     sync.Once
+)
 
 func GetMeteringInstance() *Metering {
 	log.Debug(messages.RetrieveMeteringInstance)
-	if meteringInstance == nil {
-		meteringInstance = &Metering{}
-		meteringInstance.meteringFeatureData = make(map[string]*meteringRecord)
-		meteringInstance.meteringPropertyData = make(map[string]*meteringRecord)
+	meteringOnce.Do(func() {
+		meteringInstance = &Metering{
+			meteringFeatureData:  make(map[string]*meteringRecord),
+			meteringPropertyData: make(map[string]*meteringRecord),
+		}
 		log.Debug(messages.StartSendingMeteringData)
 		c := cron.New()
 		c.AddFunc("@every "+SendInterval, meteringInstance.sendMetering)
 		c.Start()
-	}
+	})
 	return meteringInstance
+}
+
+// used for testing purposes only
+func ResetMeteringInstance() {
+	meteringInstance = nil
+	meteringOnce = sync.Once{}
 }
 
 func (mt *Metering) Init(guid string, environmentID string, collectionID string) {
@@ -137,7 +147,7 @@ func (mt *Metering) addMetering(entityID string, segmentID string, featureID str
 	}
 
 	key := buildCompositeKey(modifyKey, entityID, segmentID)
-	
+
 	mt.mu.Lock()
 	record, exists := meteringData[key]
 	if exists {
@@ -197,7 +207,7 @@ func (mt *Metering) sendMetering() {
 
 	log.Debug(currentFeatureData)
 	log.Debug(currentPropertyData)
-	
+
 	if len(currentFeatureData) == 0 && len(currentPropertyData) == 0 {
 		return
 	}
@@ -207,7 +217,7 @@ func (mt *Metering) sendMetering() {
 		EnvironmentID: mt.EnvironmentID,
 		Usages:        []Usages{},
 	}
-	
+
 	if len(currentFeatureData) > 0 {
 		mt.buildRequestBody(currentFeatureData, &collectionUsages, "feature_id")
 	}

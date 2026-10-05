@@ -185,7 +185,7 @@ func TestSendToServer(t *testing.T) {
 
 }
 func resetMeteringInstance() {
-	meteringInstance = nil
-	urlBuilderInstance = nil
+	ResetMeteringInstance()
+	ResetURLBuilderInstance()
 	log.SetLogLevel("info")
 }

@@ -61,5 +61,5 @@ func TestURLBuilder(t *testing.T) {
 }
 
 func resetURLBuilderInstance() {
-	urlBuilderInstance = nil
+	ResetURLBuilderInstance()
 }

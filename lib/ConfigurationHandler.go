@@ -66,14 +66,23 @@ type ConfigurationHandler struct {
 	mu                          sync.Mutex
 }
 
-var configurationHandlerInstance *ConfigurationHandler
+var (
+	configurationHandlerInstance *ConfigurationHandler
+	configurationHandlerOnce     sync.Once
+)
 
 // GetConfigurationHandlerInstance : Get Configuration Handler Instance
 func GetConfigurationHandlerInstance() *ConfigurationHandler {
-	if configurationHandlerInstance == nil {
+	configurationHandlerOnce.Do(func() {
 		configurationHandlerInstance = new(ConfigurationHandler)
-	}
+	})
 	return configurationHandlerInstance
+}
+
+// used only for testing
+func ResetConfigurationHandlerInstance() {
+	configurationHandlerInstance = nil
+	configurationHandlerOnce = sync.Once{}
 }
 
 // Init : Init App Configuration Instance
