@@ -218,15 +218,6 @@ func TestGetProperties(t *testing.T) {
 	reset(ac)
 }
 
-func TestFetchConfigurations(t *testing.T) {
-	// test fetch configurations when sdk is not initialised properly
-	ac := GetInstance()
-	ac.FetchConfigurations()
-	if hook.LastEntry().Message != "AppConfiguration - Invalid action. You can perform this action only after a successful initialization and setting the context. Check the Init and SetContext section for errors." {
-		t.Errorf("Test failed: Incorrect error message")
-	}
-}
-
 func TestRegisterConfigurationsUpdateListener(t *testing.T) {
 	// test TestRegisterConfigurationsUpdateListener when sdk is not initialised properly
 	ac := GetInstance()

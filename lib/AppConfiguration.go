@@ -173,15 +173,6 @@ func (ac *AppConfiguration) SetContext(collectionID string, environmentID string
 	ac.configurationHandlerInstance.loadData()
 }
 
-// FetchConfigurations : Fetch Configurations
-func (ac *AppConfiguration) FetchConfigurations() {
-	if ac.isInitialized && ac.isInitializedConfig {
-		go ac.configurationHandlerInstance.loadData()
-	} else {
-		log.Error(messages.CollectionInitError)
-	}
-}
-
 // RegisterConfigurationUpdateListener : Register Configuration Update Listener
 func (ac *AppConfiguration) RegisterConfigurationUpdateListener(fhl configurationUpdateListenerFunc) {
 	if ac.isInitialized && ac.isInitializedConfig {

@@ -410,12 +410,6 @@ appConfigClient.RegisterConfigurationUpdateListener(func () {
 })
 ```
 
-## Fetch latest data
-
-```go
-appConfigClient.FetchConfigurations()
-```
-
 ## Enable debugger (Optional)
 
 ```go
