@@ -122,9 +122,11 @@ func ResetMeteringInstance() {
 }
 
 func (mt *Metering) Init(guid string, environmentID string, collectionID string) {
+	mt.mu.Lock()
 	mt.guid = guid
 	mt.EnvironmentID = environmentID
 	mt.CollectionID = collectionID
+	mt.mu.Unlock()
 }
 
 func (mt *Metering) addMetering(entityID string, segmentID string, featureID string, propertyID string) {
@@ -207,6 +209,8 @@ func (mt *Metering) sendMetering() {
 	currentPropertyData := mt.meteringPropertyData
 	mt.meteringFeatureData = make(map[string]*meteringRecord)
 	mt.meteringPropertyData = make(map[string]*meteringRecord)
+	snapshotCollection := mt.CollectionID
+	snapshotEnvironment := mt.EnvironmentID
 	mt.mu.Unlock()
 
 	log.Debug(currentFeatureData)
@@ -217,8 +221,8 @@ func (mt *Metering) sendMetering() {
 	}
 
 	collectionUsages := CollectionUsages{
-		CollectionID:  mt.CollectionID,
-		EnvironmentID: mt.EnvironmentID,
+		CollectionID:  snapshotCollection,
+		EnvironmentID: snapshotEnvironment,
 		Usages:        []Usages{},
 	}
 
@@ -259,9 +263,14 @@ func (mt *Metering) sendSplitMetering(collectionUsages CollectionUsages, count i
 func (mt *Metering) sendToServer(collectionUsages CollectionUsages) {
 	log.Debug(messages.SendMeteringServer)
 	log.Debug(collectionUsages)
+
+	mt.mu.Lock()
+	guid := mt.guid
+	mt.mu.Unlock()
+
 	builder := core.NewRequestBuilder(core.POST)
 	pathParamsMap := map[string]string{
-		"guid": mt.guid,
+		"guid": guid,
 	}
 	_, err := builder.ResolveRequestURL(urlBuilderInstance.GetBaseServiceURL(), `/apprapp/events/v1/instances/{guid}/usage`, pathParamsMap)
 	if err != nil {
