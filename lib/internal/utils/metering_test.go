@@ -36,6 +36,7 @@ func mockLogger() {
 }
 
 func TestMeteringInit(t *testing.T) {
+	resetMeteringInstance()
 	// test init
 	m := GetMeteringInstance()
 	assert.Equal(t, "", m.guid)

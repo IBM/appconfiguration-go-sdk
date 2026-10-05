@@ -136,27 +136,31 @@ func (mt *Metering) addMetering(entityID string, segmentID string, featureID str
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 
-	var meteringData map[string]*meteringRecord
 	var modifyKey string
 	if featureID != "" {
-		meteringData = meteringInstance.meteringFeatureData
 		modifyKey = featureID
 	} else {
-		meteringData = meteringInstance.meteringPropertyData
 		modifyKey = propertyID
 	}
 
 	key := buildCompositeKey(modifyKey, entityID, segmentID)
 
+	// select the map by holding the lock, so that it is not raced when rotation is performed by sendMetering()
 	mt.mu.Lock()
+	defer mt.mu.Unlock()
+
+	var meteringData map[string]*meteringRecord
+	if featureID != "" {
+		meteringData = mt.meteringFeatureData
+	} else {
+		meteringData = mt.meteringPropertyData
+	}
 	record, exists := meteringData[key]
 	if exists {
-		mt.mu.Unlock()
 		record.increment(formattedTime)
-	} else {
-		meteringData[key] = newMeteringRecord(formattedTime)
-		mt.mu.Unlock()
+		return
 	}
+	meteringData[key] = newMeteringRecord(formattedTime)
 }
 
 func (mt *Metering) RecordEvaluation(featureID string, propertyID string, entityID string, segmentID string) {
