@@ -44,7 +44,7 @@ Add rule two:
             Attribute name: radius
             Operator: less than and equals
             Values: 60
-            
+
 ```
 
 - Again on the same instance, navigate to Feature flags section and create a feature flag by clicking on create button.

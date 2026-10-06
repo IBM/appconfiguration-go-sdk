@@ -1,11 +1,11 @@
 GIT Issue Reference - #
 
-Description of the PR - 
+Description of the PR -
 
 GIT commit detect secret run proof -
 
-Change Request Reference (If applicable) - 
+Change Request Reference (If applicable) -
 
-Build Details - 
+Build Details -
 
-Sonar Details - 
+Sonar Details -
