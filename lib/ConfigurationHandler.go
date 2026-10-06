@@ -53,7 +53,6 @@ type ConfigurationHandler struct {
 	region                      string
 	usePrivateEndpoint          bool
 	urlBuilder                  *utils.URLBuilder
-	appConfig                   *AppConfiguration
 	cache                       *models.Cache
 	configurationUpdateListener configurationUpdateListenerFunc
 	persistentCacheDirectory    string

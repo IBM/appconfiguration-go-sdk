@@ -75,11 +75,11 @@ func TestSetContext(t *testing.T) {
 
 	// when only collection id and environment id is provided (in-memory cache)
 	// ac.Init("a", "b", "c")
-	//ac.isInitialized = true
-	//assert.Equal(t, false, ac.isInitializedConfig)
-	//ac.SetContext("c1", "dev")
-	//assert.Equal(t, true, ac.isInitializedConfig)
-	//reset(ac)
+	// ac.isInitialized = true
+	// assert.Equal(t, false, ac.isInitializedConfig)
+	// ac.SetContext("c1", "dev")
+	// assert.Equal(t, true, ac.isInitializedConfig)
+	// reset(ac)
 
 	// when collection id and environment id is provided and the number of context options is more than 1
 	ac.Init("a", "b", "c")

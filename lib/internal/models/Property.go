@@ -89,7 +89,7 @@ func (p *Property) GetSegmentRules() []SegmentRule {
 // specified entity satisfies the targeting rules, and returns the appropriate property value.
 func (p *Property) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) interface{} {
 	log.Debug(messages.RetrievingProperty)
-	if len(entityID) <= 0 {
+	if len(entityID) == 0 {
 		log.Error("Property evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil
 	}
@@ -139,7 +139,7 @@ func (p *Property) propertyEvaluation(entityID string, entityAttributes map[stri
 			segmentRule := rulesMap[k]
 			for _, rule := range segmentRule.GetRules() {
 				for _, segmentKey := range rule.Segments {
-					if p.evaluateSegment(string(segmentKey), entityAttributes) {
+					if p.evaluateSegment((segmentKey), entityAttributes) {
 						evaluatedSegmentID = segmentKey
 						if segmentRule.GetValue() == "$default" {
 							log.Debug(messages.PropertyValue, p.GetValue())

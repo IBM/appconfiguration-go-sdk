@@ -43,7 +43,7 @@ type SecretProperty struct {
 // This is an optional parameter if the property is not configured with any targeting definition.
 // If the targeting is configured, then entityAttributes should be provided for the rule evaluation.
 func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) (result sm.SecretIntf, response *core.DetailedResponse, err error) {
-	if len(entityID) <= 0 {
+	if len(entityID) == 0 {
 		log.Error("SecretProperty evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil, nil, errors.New("error: " + messages.InvalidEntityId + "GetCurrentValue")
 	}

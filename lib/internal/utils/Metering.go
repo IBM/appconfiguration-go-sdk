@@ -258,7 +258,7 @@ func (mt *Metering) sendSplitMetering(collectionUsages CollectionUsages, count i
 			collectionUsageElem.Usages = append(collectionUsageElem.Usages, subUsages[i])
 		}
 		mt.sendToServer(collectionUsageElem)
-		lim = lim + constants.DefaultUsageLimit
+		lim += constants.DefaultUsageLimit
 	}
 }
 func (mt *Metering) sendToServer(collectionUsages CollectionUsages) {

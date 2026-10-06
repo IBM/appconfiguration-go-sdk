@@ -119,7 +119,7 @@ func (f *Feature) IsEnabled() bool {
 // specified entity satisfies the targeting rules, and returns the appropriate feature flag value.
 func (f *Feature) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) interface{} {
 	log.Debug(messages.RetrievingFeature)
-	if len(entityID) <= 0 {
+	if len(entityID) == 0 {
 		log.Error("Feature flag evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil
 	}
@@ -168,7 +168,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 				segmentRule := rulesMap[k]
 				for _, rule := range segmentRule.GetRules() {
 					for _, segmentKey := range rule.Segments {
-						if f.evaluateSegment(string(segmentKey), entityAttributes) {
+						if f.evaluateSegment((segmentKey), entityAttributes) {
 							evaluatedSegmentID = segmentKey
 							var segmentLevelRolloutPercentage int
 

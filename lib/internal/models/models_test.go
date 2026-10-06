@@ -579,7 +579,7 @@ func TestFormatConfig(t *testing.T) {
 	}
 }
 
-var testLogger, hook = test.NewNullLogger()
+var testLogger, _ = test.NewNullLogger()
 
 func mockLogger() {
 	log.SetLogger(testLogger)
