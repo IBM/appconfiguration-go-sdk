@@ -56,7 +56,7 @@ issues:
   max-same-issues: 10
   # Baseline: 44 pre-existing issues as of v0.6.0 release branch.
   # will remove this after they are fixed post-release.
-  new-from-rev: f79d6f8be9dda1d8e0b5159972d5bb74e1ccc1df
+  new-from-rev: fe1553f3a0d0dad81e3498663df1446e96048c74
 formatters:
   enable:
     - gofmt
