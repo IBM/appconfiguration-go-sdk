@@ -89,7 +89,10 @@ func TestFetchApi(t *testing.T) {
 			fmt.Fprintf(w, "%s", `{ "environments": [ { "name": "Dev", "environment_id": "dev", "description": "Environment created on instance creation", "tags": "", "color_code": "#FDD13A", "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [ { "order": 1, "rollout_percentage": 100, "rules": [ { "segments": [ "knliu818", "ka761hap" ] } ], "value": true } ] } ] } ], "collections": [ { "name": "C1", "collection_id": "c1" } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`)
 		}))
 
+	utils.ResetAPIManagerInstance()
 	ch := GetConfigurationHandlerInstance()
+	ch.Init("us-south", "abc", "abc", false)
+	ch.SetContext("c1", "dev", ContextOptions{})
 	ch.urlBuilder.SetBaseServiceURL(ts.URL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.liveConfigUpdateEnabled = true
@@ -110,7 +113,10 @@ func TestFetchApi(t *testing.T) {
 			w.WriteHeader(500)
 		}))
 
+	utils.ResetAPIManagerInstance()
 	ch = GetConfigurationHandlerInstance()
+	ch.Init("us-south", "abc", "abc", false)
+	ch.SetContext("c1", "dev", ContextOptions{})
 	ch.urlBuilder.SetBaseServiceURL(ts1.URL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.liveConfigUpdateEnabled = true
@@ -394,4 +400,6 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 func resetConfigurationHandler(ch *ConfigurationHandler) {
 	ch.cache = new(models.Cache)
+	utils.ResetAPIManagerInstance()
+	utils.ResetURLBuilderInstance()
 }

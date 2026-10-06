@@ -47,6 +47,12 @@ func GetAPIManagerInstance() *APIManager {
 	return apiManagerInstance
 }
 
+// used for testing purposes only
+func ResetAPIManagerInstance() {
+	apiManagerInstance = nil
+	once = sync.Once{}
+}
+
 // Request : wrapper over core base service request method.
 func (ap *APIManager) Request(builder *core.RequestBuilder) (*core.DetailedResponse, error) {
 	request, err := builder.Build()

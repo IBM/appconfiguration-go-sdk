@@ -17,6 +17,7 @@
 package lib
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
@@ -224,6 +225,54 @@ func TestRegisterConfigurationsUpdateListener(t *testing.T) {
 	ac.RegisterConfigurationUpdateListener(func() {})
 	if hook.LastEntry().Message != "AppConfiguration - Invalid action. You can perform this action only after a successful initialization and setting the context. Check the Init and SetContext section for errors." {
 		t.Errorf("Test failed: Incorrect error message")
+	}
+}
+
+func TestAppConfigurationSingletonConcurrent(t *testing.T) {
+	ResetAppConfigurationInstance()
+	defer ResetAppConfigurationInstance()
+
+	const numGoroutines = 50
+	instances := make([]*AppConfiguration, numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			instances[idx] = GetInstance()
+		}(i)
+	}
+	wg.Wait()
+
+	first := instances[0]
+	assert.NotNil(t, first)
+	for i := 1; i < numGoroutines; i++ {
+		assert.Same(t, first, instances[i], "all goroutines should receive the same AppConfiguration instance")
+	}
+}
+
+func TestConfigurationHandlerSingletonConcurrent(t *testing.T) {
+	ResetConfigurationHandlerInstance()
+	defer ResetConfigurationHandlerInstance()
+
+	const numGoroutines = 50
+	instances := make([]*ConfigurationHandler, numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			instances[idx] = GetConfigurationHandlerInstance()
+		}(i)
+	}
+	wg.Wait()
+
+	first := instances[0]
+	assert.NotNil(t, first)
+	for i := 1; i < numGoroutines; i++ {
+		assert.Same(t, first, instances[i], "all goroutines should receive the same ConfigurationHandler instance")
 	}
 }
 

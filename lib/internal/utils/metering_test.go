@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/IBM/go-sdk-core/v5/core"
 
@@ -185,6 +187,183 @@ func TestSendToServer(t *testing.T) {
 	resetMeteringInstance()
 
 }
+func TestMeteringSingletonConcurrent(t *testing.T) {
+	resetMeteringInstance()
+	defer resetMeteringInstance()
+
+	const numGoroutines = 50
+	instances := make([]*Metering, numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			instances[idx] = GetMeteringInstance()
+		}(i)
+	}
+	wg.Wait()
+
+	first := instances[0]
+	assert.NotNil(t, first)
+	for i := 1; i < numGoroutines; i++ {
+		assert.Same(t, first, instances[i], "all goroutines should receive the same Metering instance")
+	}
+}
+
+func TestMeteringConcurrentEvaluationAndRotation(t *testing.T) {
+	resetMeteringInstance()
+	defer resetMeteringInstance()
+
+	m := GetMeteringInstance()
+	m.Init("test-guid", "test-env", "test-col")
+
+	const numWriters = 10
+	const numIterations = 200
+	var wg sync.WaitGroup
+	wg.Add(numWriters)
+	stop := make(chan struct{})
+
+	var flusherWg sync.WaitGroup
+	flusherWg.Add(1)
+	go func() {
+		defer flusherWg.Done()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-time.After(5 * time.Millisecond):
+				m.sendMetering()
+			}
+		}
+	}()
+
+	for w := 0; w < numWriters; w++ {
+		go func(workerID int) {
+			defer wg.Done()
+			for i := 0; i < numIterations; i++ {
+				fID := fmt.Sprintf("feat-%d", i%5)
+				pID := fmt.Sprintf("prop-%d", i%5)
+				eID := fmt.Sprintf("entity-%d", workerID)
+				sID := fmt.Sprintf("seg-%d", i%2)
+				m.RecordEvaluation(fID, "", eID, sID)
+				m.RecordEvaluation("", pID, eID, sID)
+			}
+		}(w)
+	}
+
+	wg.Wait()
+	close(stop)
+	flusherWg.Wait()
+}
+
+func TestMeteringSendMeteringSnapshot(t *testing.T) {
+	resetMeteringInstance()
+	defer resetMeteringInstance()
+
+	m := GetMeteringInstance()
+	m.Init("guid-1", "env-1", "col-1")
+	m.RecordEvaluation("f1", "", "e1", "s1")
+	assert.Equal(t, 1, len(m.meteringFeatureData))
+	m.sendMetering()
+	assert.Equal(t, 0, len(m.meteringFeatureData))
+	assert.Equal(t, 0, len(m.meteringPropertyData))
+}
+
+// covered above, but testing again aggressively
+func TestMeteringSingletonAndMapRotationRace(t *testing.T) {
+	resetMeteringInstance()
+	defer resetMeteringInstance()
+
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+	for w := 0; w < 8; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			mt := GetMeteringInstance()
+			mt.Init("guid", "env", "collection")
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				mt.RecordEvaluation("f1", "", "entity-1", "")
+			}
+		}()
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		mt := GetMeteringInstance()
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			mt.sendMetering()
+		}
+	}()
+
+	time.Sleep(200 * time.Millisecond)
+	close(stop)
+	wg.Wait()
+}
+
+// covered above, but testing again aggressively
+func TestConcurrentMapIterationCrash(t *testing.T) {
+	resetMeteringInstance()
+	defer resetMeteringInstance()
+
+	mt := GetMeteringInstance()
+	mt.Init("guid", "env", "collection")
+
+	for i := 0; i < 50000; i++ {
+		mt.RecordEvaluation(fmt.Sprintf("f%d", i), "", "entity-1", "")
+	}
+
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+
+	for w := 0; w < 16; w++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			i := 0
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				i++
+				mt.RecordEvaluation(fmt.Sprintf("new-f%d-%d", workerID, i), "", "entity-1", "")
+			}
+		}(w)
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 500; i++ {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			mt.sendMetering()
+		}
+	}()
+
+	time.Sleep(2 * time.Second)
+	close(stop)
+	wg.Wait()
+	t.Log("test completed without the runtime firing 'concurrent map iteration and map write'")
+}
+
 func resetMeteringInstance() {
 	ResetMeteringInstance()
 	ResetURLBuilderInstance()
