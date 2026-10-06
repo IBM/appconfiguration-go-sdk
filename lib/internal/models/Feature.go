@@ -168,7 +168,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 				segmentRule := rulesMap[k]
 				for _, rule := range segmentRule.GetRules() {
 					for _, segmentKey := range rule.Segments {
-						if f.evaluateSegment((segmentKey), entityAttributes) {
+						if f.evaluateSegment(segmentKey, entityAttributes) {
 							evaluatedSegmentID = segmentKey
 							var segmentLevelRolloutPercentage int
 

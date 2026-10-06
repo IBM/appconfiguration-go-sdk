@@ -139,7 +139,7 @@ func (p *Property) propertyEvaluation(entityID string, entityAttributes map[stri
 			segmentRule := rulesMap[k]
 			for _, rule := range segmentRule.GetRules() {
 				for _, segmentKey := range rule.Segments {
-					if p.evaluateSegment((segmentKey), entityAttributes) {
+					if p.evaluateSegment(segmentKey, entityAttributes) {
 						evaluatedSegmentID = segmentKey
 						if segmentRule.GetValue() == "$default" {
 							log.Debug(messages.PropertyValue, p.GetValue())
