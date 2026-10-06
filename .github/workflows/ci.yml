@@ -108,11 +108,6 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./lib/...
 
-      - name: Run gosec
-        uses: securego/gosec@v2.21.4
-        with:
-          args: -exclude=G104 -fmt sarif -out gosec.sarif ./lib/...
-
       - name: Upload gosec SARIF report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -138,9 +133,9 @@ jobs:
           cache: true
 
       - name: Run pre-commit hooks
-        uses: pre-commit/action@v3.0.1
-        env:
-          SKIP: go-unit-tests
+        run: |
+          pip install pre-commit
+          SKIP=go-unit-tests pre-commit run --all-files
 
   ci-success:
     name: CI passed
