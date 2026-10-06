@@ -17,8 +17,9 @@
 package models
 
 import (
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/emirpasic/gods/maps/treemap"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 // Cache : Cache struct

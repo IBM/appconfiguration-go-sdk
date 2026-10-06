@@ -1,3 +1,32 @@
-.idea/
-examples/go.sum
+# Go build outputs
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Test coverage
 coverage.out
+coverage.html
+
+# Dependency vendor directory (we use go modules)
+vendor/
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Examples build outputs (examples use separate go.sum)
+examples/go.sum
+
+# Pre-commit cache
+.pre-commit-cache/

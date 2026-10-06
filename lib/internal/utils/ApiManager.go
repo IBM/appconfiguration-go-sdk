@@ -18,10 +18,12 @@ package utils
 
 import (
 	"encoding/json"
-	cons "github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
-	"github.com/IBM/go-sdk-core/v5/core"
 	"sync"
 	"time"
+
+	"github.com/IBM/go-sdk-core/v5/core"
+
+	cons "github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 )
 
 // APIManager : wrapper struct over core base service.

@@ -19,8 +19,9 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	"github.com/spaolacci/murmur3"
 	"math"
+
+	"github.com/spaolacci/murmur3"
 )
 
 func computeHash(str string) float64 {
@@ -42,7 +43,6 @@ func GetNormalizedValue(str string) int {
 // 3. If collections array is not present - feature/property is still considered as part of the config.
 // 4. And Marshals the extracted data into models.CacheConfig
 func ExtractConfigurations(data []byte, environmentId, collectionId string) ([]byte, error) {
-
 	config := Config{}
 	err := json.Unmarshal(data, &config)
 	if err != nil {
@@ -99,9 +99,7 @@ func ExtractConfigurations(data []byte, environmentId, collectionId string) ([]b
 			// get the segmentIds from the extracted feature. Use the segmentId to extract segments.
 			for _, segmentRule := range feature.SegmentRules {
 				for _, rules := range segmentRule.Rules {
-					for _, segment := range rules.Segments {
-						segmentIds = append(segmentIds, segment)
-					}
+					segmentIds = append(segmentIds, rules.Segments...)
 				}
 			}
 		}
@@ -126,9 +124,7 @@ func ExtractConfigurations(data []byte, environmentId, collectionId string) ([]b
 			// get the segmentIds from the extracted feature. Use the segmentId to extract segments.
 			for _, segmentRule := range property.SegmentRules {
 				for _, rules := range segmentRule.Rules {
-					for _, segment := range rules.Segments {
-						segmentIds = append(segmentIds, segment)
-					}
+					segmentIds = append(segmentIds, rules.Segments...)
 				}
 			}
 		}

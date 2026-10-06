@@ -3,11 +3,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 
 	AppConfiguration "github.com/IBM/appconfiguration-go-sdk/lib"
 )

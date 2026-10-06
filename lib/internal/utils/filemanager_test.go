@@ -17,15 +17,16 @@
 package utils
 
 import (
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 )
 
 func TestFileManager(t *testing.T) {
-
 	mockLogger()
 	assert.Equal(t, SanitizePath(""), "/")
 	assert.Equal(t, SanitizePath("Users/home/Desktop"), "/Users/home/Desktop")

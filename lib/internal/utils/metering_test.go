@@ -26,9 +26,10 @@ import (
 
 	"github.com/IBM/go-sdk-core/v5/core"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 var testLogger, hook = test.NewNullLogger()
@@ -49,7 +50,6 @@ func TestMeteringInit(t *testing.T) {
 	assert.Equal(t, "c1", m.CollectionID)
 	assert.Equal(t, "dev", m.EnvironmentID)
 	resetMeteringInstance()
-
 }
 
 const guid, env, col, ent, seg, feat, prop = "guid", "dev", "c1", "e1", "s1", "f1", "p1"
@@ -123,11 +123,9 @@ func TestBuildRequestBody(t *testing.T) {
 	m.buildRequestBody(m.meteringFeatureData, &collectionsUsages, "feature_id")
 	assert.Equal(t, int64(2), collectionsUsages.Usages[0].Count)
 	resetMeteringInstance()
-
 }
 
 func TestSendToServer(t *testing.T) {
-
 	// test send to server with backend returning success
 
 	mockLogger()
@@ -173,7 +171,6 @@ func TestSendToServer(t *testing.T) {
 	ts = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
-
 		}))
 	urlBuilderInstance = &URLBuilder{
 
@@ -185,7 +182,6 @@ func TestSendToServer(t *testing.T) {
 		t.Errorf("Test failed: Incorrect error message -->")
 	}
 	resetMeteringInstance()
-
 }
 func TestMeteringSingletonConcurrent(t *testing.T) {
 	resetMeteringInstance()

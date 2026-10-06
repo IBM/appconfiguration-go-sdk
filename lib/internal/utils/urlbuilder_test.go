@@ -25,7 +25,6 @@ import (
 )
 
 func TestURLBuilder(t *testing.T) {
-
 	// test websocket url
 	urlBuilder := GetInstance()
 	urlBuilder.SetWebSocketURL("wss://test-service.com/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID")
@@ -58,7 +57,6 @@ func TestURLBuilder(t *testing.T) {
 	token := urlBuilder.GetToken()
 	assert.Equal(t, 0, len(token))
 	resetURLBuilderInstance()
-
 }
 
 func TestURLBuilderSingletonConcurrent(t *testing.T) {

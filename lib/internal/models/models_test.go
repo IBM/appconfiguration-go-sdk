@@ -20,10 +20,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 var value []interface{}
@@ -360,7 +361,6 @@ func TestProperty(t *testing.T) {
 }
 
 func TestSecretProperty(t *testing.T) {
-
 	entityMap := make(map[string]interface{})
 	entityMap["email"] = "user@ibm.com"
 	if secretproperty.PropertyID != "propertySecretDataId" {
@@ -378,7 +378,6 @@ func TestSecretProperty(t *testing.T) {
 	if secretIDError == nil {
 		t.Error("Expected TestSecretPropertyGetCurrentValueWithNoSecretId test case to pass")
 	}
-
 }
 
 func TestSegment(t *testing.T) {
@@ -620,5 +619,4 @@ func TestExtractConfigurationsFromBootstrapJson(t *testing.T) {
 	if !reflect.DeepEqual([]byte(expectedConfigurations), output) {
 		t.Error("Expected TestExtractConfigurationsFromBootstrapJson test case to pass")
 	}
-
 }

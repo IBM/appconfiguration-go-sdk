@@ -26,15 +26,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/IBM/go-sdk-core/v5/core"
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/gorilla/websocket"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"github.com/IBM/go-sdk-core/v5/core"
-	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
-	"github.com/emirpasic/gods/maps/treemap"
-	"github.com/gorilla/websocket"
 )
 
 // variable to keep track of status of server-client connection
@@ -134,7 +135,6 @@ func (ch *ConfigurationHandler) loadData() {
 				} else {
 					ch.saveInCache(bootstrapConfigurations)
 					go utils.StoreFiles(string(models.FormatConfig(bootstrapConfigurations, ch.environmentID, ch.collectionID)), ch.persistentCacheDirectory)
-
 				}
 			}
 		} else {
@@ -383,7 +383,6 @@ func (ch *ConfigurationHandler) getFeature(featureID string) (models.Feature, er
 	}
 	log.Error(messages.InvalidFeatureID, featureID)
 	return models.Feature{}, errors.New(messages.ErrorInvalidFeatureID + featureID)
-
 }
 func (ch *ConfigurationHandler) getProperties() (map[string]models.Property, error) {
 	if ch.cache == nil {

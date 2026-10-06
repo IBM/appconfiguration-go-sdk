@@ -46,7 +46,6 @@ func TestInit(t *testing.T) {
 	assert.Nil(t, ac.configurationHandlerInstance)
 	ac.Init("a", "b", "c")
 	assert.NotNil(t, ac.configurationHandlerInstance)
-
 }
 
 func TestSetContext(t *testing.T) {
@@ -75,7 +74,7 @@ func TestSetContext(t *testing.T) {
 	reset(ac)
 
 	// when only collection id and environment id is provided (in-memory cache)
-	//ac.Init("a", "b", "c")
+	// ac.Init("a", "b", "c")
 	//ac.isInitialized = true
 	//assert.Equal(t, false, ac.isInitializedConfig)
 	//ac.SetContext("c1", "dev")
@@ -292,8 +291,7 @@ func mockSetCache(ac *AppConfiguration) {
 	testFeature.Name = "discountOnBikes"
 	testFeature.FeatureID = "FID1"
 	featureMap["FID1"] = testFeature
-	var cacheInstance *models.Cache
-	cacheInstance = new(models.Cache)
+	var cacheInstance = new(models.Cache)
 	cacheInstance.FeatureMap = featureMap
 	ac.configurationHandlerInstance.cache = cacheInstance
 

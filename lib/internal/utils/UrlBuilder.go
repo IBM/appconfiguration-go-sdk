@@ -87,7 +87,6 @@ func (ub *URLBuilder) Init(collectionID string, environmentID string, region str
 			ub.httpBase = overrideServiceUrl
 			ub.iamURL = "https://iam.test.cloud.ibm.com"
 			ub.webSocketURL = "wss://" + temp[1] + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
-
 		}
 		// for prod
 	} else {
@@ -136,8 +135,7 @@ func (ub *URLBuilder) GetWebSocketURL() string {
 // GetToken returns the string "Bearer <token>"
 func (ub *URLBuilder) GetToken() string {
 	req, _ := http.NewRequest("GET", "https://localhost", nil)
-	var err error
-	err = ub.authenticator.Authenticate(req)
+	var err = ub.authenticator.Authenticate(req)
 	if err != nil {
 		return ""
 	}

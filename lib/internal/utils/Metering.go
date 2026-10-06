@@ -23,11 +23,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/IBM/go-sdk-core/v5/core"
+	"github.com/robfig/cron"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	messages "github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"github.com/IBM/go-sdk-core/v5/core"
-	"github.com/robfig/cron"
 )
 
 // Usages : Usages struct
@@ -241,7 +242,7 @@ func (mt *Metering) sendMetering() {
 	}
 }
 func (mt *Metering) sendSplitMetering(collectionUsages CollectionUsages, count int) {
-	var lim int = 0
+	var lim = 0
 	subUsages := collectionUsages.Usages
 	for lim < count {
 		var endIndex int

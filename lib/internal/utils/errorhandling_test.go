@@ -23,14 +23,12 @@ import (
 )
 
 func TestErrorHandling(t *testing.T) {
-
 	// do a division with error handling support
 	result := divideWithErrorHandling(1, 0)
 	assert.Equal(t, 0, result)
 
 	// do a division with error handling support
 	assert.Panics(t, func() { divideWithoutErrorHandling(1, 0) }, "The code did not panic")
-
 }
 
 func divideWithErrorHandling(m int, n int) int {

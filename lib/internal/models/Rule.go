@@ -48,8 +48,7 @@ func (r *Rule) GetAttributeName() string {
 }
 
 func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
-
-	var result bool = false
+	var result = false
 
 	if key == nil || value == nil {
 		return result
@@ -82,7 +81,7 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			result = (key.(float64) == value.(float64))
 		} else if isBool(key) {
 			// compare boolean
-			key, _ = formatBool(key) //convert boolean true/false to string "true"/"false"
+			key, _ = formatBool(key) // nolint:errcheck // convert boolean true/false to string "true"/"false"
 			result = (key == value.(string))
 		} else {
 			// compare string
@@ -97,11 +96,11 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			result = !(key.(float64) == value.(float64))
 		} else if isBool(key) {
 			// compare boolean
-			key, _ = formatBool(key) //convert boolean true/false to string "true"/"false"
-			result = !(key == value.(string))
+			key, _ = formatBool(key)       // nolint:errcheck // convert boolean true/false to string "true"/"false"
+			result = key != value.(string) // nolint:errcheck
 		} else {
 			// compare string
-			result = !(key == value)
+			result = key != value
 		}
 		break
 	case "greaterThan":

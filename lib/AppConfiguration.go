@@ -21,10 +21,11 @@ import (
 	"path/filepath"
 	"sync"
 
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
 )
 
 // AppConfiguration : Struct having init and configInstance.
@@ -184,7 +185,7 @@ func (ac *AppConfiguration) RegisterConfigurationUpdateListener(fhl configuratio
 
 // GetFeature : Get Feature
 func (ac *AppConfiguration) GetFeature(featureID string) (models.Feature, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getFeature(featureID)
 	}
 	log.Error(messages.CollectionInitError)
@@ -193,7 +194,7 @@ func (ac *AppConfiguration) GetFeature(featureID string) (models.Feature, error)
 
 // GetFeatures : Get Features
 func (ac *AppConfiguration) GetFeatures() (map[string]models.Feature, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getFeatures()
 	}
 	log.Error(messages.CollectionInitError)
@@ -202,7 +203,7 @@ func (ac *AppConfiguration) GetFeatures() (map[string]models.Feature, error) {
 
 // GetProperty : Get Property
 func (ac *AppConfiguration) GetProperty(propertyID string) (models.Property, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getProperty(propertyID)
 	}
 	log.Error(messages.CollectionInitError)
@@ -211,7 +212,7 @@ func (ac *AppConfiguration) GetProperty(propertyID string) (models.Property, err
 
 // GetProperties : Get Properties
 func (ac *AppConfiguration) GetProperties() (map[string]models.Property, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getProperties()
 	}
 	log.Error(messages.CollectionInitError)
@@ -220,7 +221,7 @@ func (ac *AppConfiguration) GetProperties() (map[string]models.Property, error) 
 
 // GetSecret : Get Secret
 func (ac *AppConfiguration) GetSecret(propertyID string, secretsManagerService *sm.SecretsManagerV2) (models.SecretProperty, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		if secretsManagerService != nil {
 			return ac.configurationHandlerInstance.getSecret(propertyID, secretsManagerService)
 		} else {
