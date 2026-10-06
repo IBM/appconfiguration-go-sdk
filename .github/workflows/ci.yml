@@ -1,8 +1,15 @@
 name: CI
 
 on:
-  pull_request:
+  merge_group:
+  push:
     branches: [main, master]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches: ["**"]
+    paths-ignore:
+      - '**/*.md'
   workflow_call:
   workflow_dispatch:
 
@@ -10,24 +17,31 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 env:
-  GO_VERSION: "1.26"
+  GOTOOLCHAIN: local
+  GOLANGCI_LINT_VERSION: v2.14.0
+  TPARSE_VERSION: v0.18.0
 
 jobs:
   lint:
     name: Lint
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7.0.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: stable
           cache: true
 
       - name: Verify go.mod
@@ -37,7 +51,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          out=$(gofmt -l $(find . -name '*.go' -not -path './examples/*'))
+          out=$(gofmt -l $(find . -name '*.go'))
           if [ -n "$out" ]; then
             echo "The following files are not gofmt-formatted:"
             echo "$out"
@@ -45,40 +59,66 @@ jobs:
           fi
 
       - name: Run go vet
-        run: go vet ./lib/...
+        run: go vet ./...
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9.3.0
         with:
-          version: v2.14.0
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
           args: --config=.golangci.yml
 
   test:
-    name: Test
+    name: Unit Testing with Go ${{ matrix.go-version }}
     needs: lint
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: [oldstable, stable]
+    env:
+      GOFLAGS: -trimpath
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7.0.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ matrix.go-version }}
           cache: true
 
       - name: Download dependencies
         run: go mod download
 
       - name: Build
-        run: go build ./lib/...
+        run: go build ./...
 
-      - name: Run tests with race detector
-        run: go test -race -count=1 -timeout=120s -coverprofile=coverage.out -covermode=atomic ./lib/...
+      - name: Run tests
+        run: |
+          go test -race -count=1 -timeout=120s -coverprofile=coverage.out -covermode=atomic -json ./... | tee _test_output.json
+          # Exit with the test exit code, not tee's
+          exit ${PIPESTATUS[0]}
 
-      - name: Print coverage summary
-        run: go tool cover -func=coverage.out
+      - name: Report Test Results
+        if: always()
+        run: |
+          go run github.com/mfridman/tparse@${TPARSE_VERSION} -all -format markdown -file _test_output.json | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Report Per-Func Test Coverage
+        if: always()
+        run: |
+          cat >>$GITHUB_STEP_SUMMARY <<'EOF'
+          <details>
+          <summary>Click for per-func code coverage</summary>
+
+          |Filename|Function|Coverage|
+          |--------|--------|--------|
+          EOF
+          go tool cover -func=coverage.out | sed -E -e 's/[[:space:]]+/|/g' -e 's/$/|/g' -e 's/^/|/g' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -96,23 +136,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7.0.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: stable
           cache: true
 
       - name: Run govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./lib/...
-
-      - name: Upload gosec SARIF report
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: gosec.sarif
-        if: always()
+          govulncheck ./...
 
   pre-commit:
     name: Pre-commit hooks
@@ -120,6 +156,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Python (for pre-commit)
         uses: actions/setup-python@v5
@@ -127,9 +165,9 @@ jobs:
           python-version: "3.12"
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7.0.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: stable
           cache: true
 
       - name: Run pre-commit hooks
