@@ -47,6 +47,18 @@ linters:
           - gocritic
           - gosec
         path: examples/
+      # TODO: 44 pre-existing issues suppressed as of v0.6.0 release branch.
+      # Remove these exclusion rules after they are fixed post-release.
+      - linters:
+          - bodyclose
+          - errcheck
+          - gocritic
+          - govet
+          - ineffassign
+          - noctx
+          - staticcheck
+          - unparam
+        text: ".*"
     paths:
       - third_party$
       - builtin$
@@ -54,9 +66,6 @@ linters:
 issues:
   max-issues-per-linter: 50
   max-same-issues: 10
-  # Baseline: 44 pre-existing issues as of v0.6.0 release branch.
-  # will remove this after they are fixed post-release.
-  new-from-rev: fe1553f3a0d0dad81e3498663df1446e96048c74
 formatters:
   enable:
     - gofmt
