@@ -48,8 +48,7 @@ func (r *Rule) GetAttributeName() string {
 }
 
 func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
-
-	var result bool = false
+	var result = false
 
 	if key == nil || value == nil {
 		return result
@@ -58,22 +57,16 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 	switch r.GetOperator() {
 	case "endsWith":
 		result = strings.HasSuffix(key.(string), value.(string))
-		break
 	case "notEndsWith":
 		result = !strings.HasSuffix(key.(string), value.(string))
-		break
 	case "startsWith":
 		result = strings.HasPrefix(key.(string), value.(string))
-		break
 	case "notStartsWith":
 		result = !strings.HasPrefix(key.(string), value.(string))
-		break
 	case "contains":
 		result = strings.Contains(key.(string), value.(string))
-		break
 	case "notContains":
 		result = !strings.Contains(key.(string), value.(string))
-		break
 	case "is":
 		if isNumber(key) {
 			// compare number
@@ -82,13 +75,12 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			result = (key.(float64) == value.(float64))
 		} else if isBool(key) {
 			// compare boolean
-			key, _ = formatBool(key) //convert boolean true/false to string "true"/"false"
+			key, _ = formatBool(key) // nolint:errcheck // convert boolean true/false to string "true"/"false"
 			result = (key == value.(string))
 		} else {
 			// compare string
 			result = (key == value)
 		}
-		break
 	case "isNot":
 		if isNumber(key) {
 			// compare number
@@ -97,13 +89,12 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			result = !(key.(float64) == value.(float64))
 		} else if isBool(key) {
 			// compare boolean
-			key, _ = formatBool(key) //convert boolean true/false to string "true"/"false"
-			result = !(key == value.(string))
+			key, _ = formatBool(key)       // nolint:errcheck // convert boolean true/false to string "true"/"false"
+			result = key != value.(string) // nolint:errcheck
 		} else {
 			// compare string
-			result = !(key == value)
+			result = key != value
 		}
-		break
 	case "greaterThan":
 		if isNumber(key) {
 			key, _ = getFloat(key)
@@ -114,7 +105,6 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			value, _ = strconv.ParseFloat(value.(string), 64)
 			result = key.(float64) > value.(float64)
 		}
-		break
 	case "lesserThan":
 		if isNumber(key) {
 			key, _ = getFloat(key)
@@ -125,7 +115,6 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			value, _ = strconv.ParseFloat(value.(string), 64)
 			result = key.(float64) < value.(float64)
 		}
-		break
 	case "greaterThanEquals":
 		if isNumber(key) {
 			key, _ = getFloat(key)
@@ -136,7 +125,6 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			value, _ = strconv.ParseFloat(value.(string), 64)
 			result = key.(float64) >= value.(float64)
 		}
-		break
 	case "lesserThanEquals":
 		if isNumber(key) {
 			key, _ = getFloat(key)
@@ -147,7 +135,6 @@ func (r *Rule) operatorCheck(key interface{}, value interface{}) bool {
 			value, _ = strconv.ParseFloat(value.(string), 64)
 			result = key.(float64) <= value.(float64)
 		}
-		break
 	default:
 		result = false
 	}

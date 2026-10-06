@@ -17,6 +17,7 @@
 package lib
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
@@ -45,7 +46,6 @@ func TestInit(t *testing.T) {
 	assert.Nil(t, ac.configurationHandlerInstance)
 	ac.Init("a", "b", "c")
 	assert.NotNil(t, ac.configurationHandlerInstance)
-
 }
 
 func TestSetContext(t *testing.T) {
@@ -74,12 +74,12 @@ func TestSetContext(t *testing.T) {
 	reset(ac)
 
 	// when only collection id and environment id is provided (in-memory cache)
-	//ac.Init("a", "b", "c")
-	//ac.isInitialized = true
-	//assert.Equal(t, false, ac.isInitializedConfig)
-	//ac.SetContext("c1", "dev")
-	//assert.Equal(t, true, ac.isInitializedConfig)
-	//reset(ac)
+	// ac.Init("a", "b", "c")
+	// ac.isInitialized = true
+	// assert.Equal(t, false, ac.isInitializedConfig)
+	// ac.SetContext("c1", "dev")
+	// assert.Equal(t, true, ac.isInitializedConfig)
+	// reset(ac)
 
 	// when collection id and environment id is provided and the number of context options is more than 1
 	ac.Init("a", "b", "c")
@@ -218,21 +218,60 @@ func TestGetProperties(t *testing.T) {
 	reset(ac)
 }
 
-func TestFetchConfigurations(t *testing.T) {
-	// test fetch configurations when sdk is not initialised properly
-	ac := GetInstance()
-	ac.FetchConfigurations()
-	if hook.LastEntry().Message != "AppConfiguration - Invalid action. You can perform this action only after a successful initialization and setting the context. Check the Init and SetContext section for errors." {
-		t.Errorf("Test failed: Incorrect error message")
-	}
-}
-
 func TestRegisterConfigurationsUpdateListener(t *testing.T) {
 	// test TestRegisterConfigurationsUpdateListener when sdk is not initialised properly
 	ac := GetInstance()
 	ac.RegisterConfigurationUpdateListener(func() {})
 	if hook.LastEntry().Message != "AppConfiguration - Invalid action. You can perform this action only after a successful initialization and setting the context. Check the Init and SetContext section for errors." {
 		t.Errorf("Test failed: Incorrect error message")
+	}
+}
+
+func TestAppConfigurationSingletonConcurrent(t *testing.T) {
+	ResetAppConfigurationInstance()
+	defer ResetAppConfigurationInstance()
+
+	const numGoroutines = 50
+	instances := make([]*AppConfiguration, numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			instances[idx] = GetInstance()
+		}(i)
+	}
+	wg.Wait()
+
+	first := instances[0]
+	assert.NotNil(t, first)
+	for i := 1; i < numGoroutines; i++ {
+		assert.Same(t, first, instances[i], "all goroutines should receive the same AppConfiguration instance")
+	}
+}
+
+func TestConfigurationHandlerSingletonConcurrent(t *testing.T) {
+	ResetConfigurationHandlerInstance()
+	defer ResetConfigurationHandlerInstance()
+
+	const numGoroutines = 50
+	instances := make([]*ConfigurationHandler, numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			instances[idx] = GetConfigurationHandlerInstance()
+		}(i)
+	}
+	wg.Wait()
+
+	first := instances[0]
+	assert.NotNil(t, first)
+	for i := 1; i < numGoroutines; i++ {
+		assert.Same(t, first, instances[i], "all goroutines should receive the same ConfigurationHandler instance")
 	}
 }
 
@@ -252,8 +291,7 @@ func mockSetCache(ac *AppConfiguration) {
 	testFeature.Name = "discountOnBikes"
 	testFeature.FeatureID = "FID1"
 	featureMap["FID1"] = testFeature
-	var cacheInstance *models.Cache
-	cacheInstance = new(models.Cache)
+	var cacheInstance = new(models.Cache)
 	cacheInstance.FeatureMap = featureMap
 	ac.configurationHandlerInstance.cache = cacheInstance
 

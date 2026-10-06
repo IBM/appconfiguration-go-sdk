@@ -89,7 +89,7 @@ func (p *Property) GetSegmentRules() []SegmentRule {
 // specified entity satisfies the targeting rules, and returns the appropriate property value.
 func (p *Property) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) interface{} {
 	log.Debug(messages.RetrievingProperty)
-	if len(entityID) <= 0 {
+	if len(entityID) == 0 {
 		log.Error("Property evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil
 	}
@@ -112,12 +112,11 @@ func (p *Property) GetCurrentValue(entityID string, entityAttributes ...map[stri
 }
 
 func (p *Property) isPropertyValid() bool {
-	return !(p.Name == "" || p.PropertyID == "" || p.DataType == "" || p.Value == nil)
+	return p.Name != "" && p.PropertyID != "" && p.DataType != "" && p.Value != nil
 }
 
 func (p *Property) propertyEvaluation(entityID string, entityAttributes map[string]interface{}) interface{} {
-
-	var evaluatedSegmentID string = constants.DefaultSegmentID
+	var evaluatedSegmentID = constants.DefaultSegmentID
 	defer func() {
 		utils.GetMeteringInstance().RecordEvaluation("", p.GetPropertyID(), entityID, evaluatedSegmentID)
 	}()
@@ -126,8 +125,7 @@ func (p *Property) propertyEvaluation(entityID string, entityAttributes map[stri
 	defer utils.GracefullyHandleError()
 
 	if len(p.GetSegmentRules()) > 0 && len(entityAttributes) > 0 {
-		var rulesMap map[int]SegmentRule
-		rulesMap = p.parseRules(p.GetSegmentRules())
+		var rulesMap = p.parseRules(p.GetSegmentRules())
 
 		// sort the map elements as per ascending order of keys
 		var keys []int
@@ -141,7 +139,7 @@ func (p *Property) propertyEvaluation(entityID string, entityAttributes map[stri
 			segmentRule := rulesMap[k]
 			for _, rule := range segmentRule.GetRules() {
 				for _, segmentKey := range rule.Segments {
-					if p.evaluateSegment(string(segmentKey), entityAttributes) {
+					if p.evaluateSegment(segmentKey, entityAttributes) {
 						evaluatedSegmentID = segmentKey
 						if segmentRule.GetValue() == "$default" {
 							log.Debug(messages.PropertyValue, p.GetValue())
@@ -161,8 +159,7 @@ func (p *Property) propertyEvaluation(entityID string, entityAttributes map[stri
 func (p *Property) parseRules(segmentRules []SegmentRule) map[int]SegmentRule {
 	log.Debug(messages.ParsingPropertyRules)
 	defer utils.GracefullyHandleError()
-	var rulesMap map[int]SegmentRule
-	rulesMap = make(map[int]SegmentRule)
+	var rulesMap = make(map[int]SegmentRule)
 	for _, rule := range segmentRules {
 		rulesMap[rule.GetOrder()] = rule
 	}

@@ -1,17 +1,44 @@
+MODULE      := github.com/IBM/appconfiguration-go-sdk
+GOTEST      := go test
+GOVET       := go vet
+GOFMT       := gofmt
+GOIMPORTS   := goimports
+GOLINT      := golangci-lint
+TESTFLAGS   := -race -count=1 -timeout=120s
+COVERFLAGS  := -coverprofile=coverage.out -covermode=atomic
+PKGS        := ./...
+
+all: fmt tidy vet lint test
+
+fmt:
+	$(GOFMT) -l -w .
+	@which $(GOIMPORTS) > /dev/null 2>&1 && $(GOIMPORTS) -local $(MODULE) -w . || \
+		echo "goimports not installed; run: go install golang.org/x/tools/cmd/goimports@latest"
+
+tidy:
+	go mod tidy
+	go mod verify
+
+vet:
+	$(GOVET) $(PKGS)
+
 lint:
-	golint lib && golint lib/internal/models && golint lib/internal/utils && golint lib/internal/messages && golint lib/internal/constants && golint examples
-
-testLib:
-	cd lib/ && go test -coverprofile=coverage.out
-
-testLibModels:
-	cd lib/internal/models && go test -coverprofile=coverage.out 
-	
-testLibUtils:
-	cd lib/internal/utils && go test -coverprofile=coverage.out 
+	@which $(GOLINT) > /dev/null 2>&1 || \
+		(echo "golangci-lint not installed; see https://golangci-lint.run/usage/install/" && exit 1)
+	$(GOLINT) run --config=.golangci.yml $(PKGS)
 
 test:
-	make testLib
-	make testLibModels
-	make testLibUtils
-	go test --coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+	$(GOTEST) $(TESTFLAGS) $(COVERFLAGS) $(PKGS)
+	go tool cover -func=coverage.out
+
+test-race:
+	$(GOTEST) -race -count=1 -timeout=120s $(PKGS)
+
+coverage: test
+	go tool cover -html=coverage.out
+
+build:
+	go build $(PKGS)
+
+clean:
+	rm -f coverage.out

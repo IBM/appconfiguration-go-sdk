@@ -24,13 +24,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 var testLogger, hook = test.NewNullLogger()
@@ -79,7 +80,6 @@ func TestSaveCache(t *testing.T) {
 }
 
 func TestFetchApi(t *testing.T) {
-
 	// test fetch api when backend returns proper response
 	// create a temp server which will act as our backend for the test
 	ts := httptest.NewServer(
@@ -89,7 +89,10 @@ func TestFetchApi(t *testing.T) {
 			fmt.Fprintf(w, "%s", `{ "environments": [ { "name": "Dev", "environment_id": "dev", "description": "Environment created on instance creation", "tags": "", "color_code": "#FDD13A", "features": [ { "name": "Cycle Rentals", "feature_id": "cycle-rentals", "type": "BOOLEAN", "enabled_value": true, "disabled_value": false, "segment_rules": [], "enabled": true, "rollout_percentage": 95 } ], "properties": [ { "name": "Show Ad", "property_id": "show-ad", "tags": "", "type": "BOOLEAN", "value": false, "segment_rules": [ { "order": 1, "rollout_percentage": 100, "rules": [ { "segments": [ "knliu818", "ka761hap" ] } ], "value": true } ] } ] } ], "collections": [ { "name": "C1", "collection_id": "c1" } ], "segments": [ { "name": "beta-users", "segment_id": "knliu818", "rules": [ { "values": [ "ibm.com" ], "operator": "contains", "attribute_name": "email" } ] }, { "name": "ibm employees", "segment_id": "ka761hap", "rules": [ { "values": [ "ibm.com", "in.ibm.com" ], "operator": "endsWith", "attribute_name": "email" } ] } ] }`)
 		}))
 
+	utils.ResetAPIManagerInstance()
 	ch := GetConfigurationHandlerInstance()
+	ch.Init("us-south", "abc", "abc", false)
+	ch.SetContext("c1", "dev", ContextOptions{})
 	ch.urlBuilder.SetBaseServiceURL(ts.URL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.liveConfigUpdateEnabled = true
@@ -110,7 +113,10 @@ func TestFetchApi(t *testing.T) {
 			w.WriteHeader(500)
 		}))
 
+	utils.ResetAPIManagerInstance()
 	ch = GetConfigurationHandlerInstance()
+	ch.Init("us-south", "abc", "abc", false)
+	ch.SetContext("c1", "dev", ContextOptions{})
 	ch.urlBuilder.SetBaseServiceURL(ts1.URL)
 	ch.urlBuilder.SetAuthenticator(&core.NoAuthAuthenticator{})
 	ch.liveConfigUpdateEnabled = true
@@ -174,7 +180,6 @@ func TestUpdateCacheAndListener(t *testing.T) {
 	assert.Equal(t, 0, len(ch.cache.PropertyMap))
 	assert.Equal(t, 0, len(ch.cache.SegmentMap))
 	resetConfigurationHandler(ch)
-
 }
 
 func TestRegisterConfigurationUpdateListener(t *testing.T) {
@@ -205,11 +210,9 @@ func TestRegisterConfigurationUpdateListener(t *testing.T) {
 	if reflect.ValueOf(listenerBeforeRegisteration).Pointer() != reflect.ValueOf(ch.configurationUpdateListener).Pointer() {
 		t.Errorf("Test failed: configurationUpdateListenr shouldnt have registered since config handler is not initialized.")
 	}
-
 }
 
 func TestStartWebSocket(t *testing.T) {
-
 	// test start web socket when connection is done successfully
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", wsEndpoint)
@@ -242,7 +245,6 @@ func TestStartWebSocket(t *testing.T) {
 		t.Errorf("Test failed: Incorrect error message")
 	}
 	resetConfigurationHandler(ch)
-
 }
 
 func TestConfigHandlerGetProperty(t *testing.T) {
@@ -264,7 +266,6 @@ func TestConfigHandlerGetProperty(t *testing.T) {
 	val, err = ch.getProperty("show-ad")
 	assert.Equal(t, "", val.Name)
 	assert.Equal(t, "error : invalid property id show-ad", fmt.Sprint(err))
-
 }
 
 func TestConfigHandlerGetProperties(t *testing.T) {
@@ -279,7 +280,6 @@ func TestConfigHandlerGetProperties(t *testing.T) {
 	ch.cache = nil
 	val, _ = ch.getProperties()
 	assert.Equal(t, 0, len(val))
-
 }
 
 func TestConfigHandlerGetSecret(t *testing.T) {
@@ -294,7 +294,7 @@ func TestConfigHandlerGetSecret(t *testing.T) {
 	}
 	// assert.Error(t, err, "Expected GetSecret to return error")
 
-	//when the data type is invalid or different other than SECRETREF
+	// when the data type is invalid or different other than SECRETREF
 	data = `{"features": [{"name": "Cycle Rentals8",
 			"feature_id": "cycle-rentals8",
 			"type": "BOOLEAN",
@@ -335,7 +335,6 @@ func TestConfigHandlerGetSecret(t *testing.T) {
 	if err == nil {
 		t.Error("Expected getProperty to fail as the show-ad2 property type is not SECRETREF")
 	}
-
 }
 
 func TestConfigHandlerGetFeature(t *testing.T) {
@@ -357,7 +356,6 @@ func TestConfigHandlerGetFeature(t *testing.T) {
 	val, err = ch.getFeature("cycle-rentals8")
 	assert.Equal(t, "", val.Name)
 	assert.Equal(t, "error : invalid feature id cycle-rentals8", fmt.Sprint(err))
-
 }
 func TestConfigHandlerGetFeatures(t *testing.T) {
 	// when property id exists in the cache
@@ -371,7 +369,6 @@ func TestConfigHandlerGetFeatures(t *testing.T) {
 	ch.cache = nil
 	val, _ = ch.getFeatures()
 	assert.Equal(t, 0, len(val))
-
 }
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{
@@ -390,8 +387,9 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-
 }
 func resetConfigurationHandler(ch *ConfigurationHandler) {
 	ch.cache = new(models.Cache)
+	utils.ResetAPIManagerInstance()
+	utils.ResetURLBuilderInstance()
 }

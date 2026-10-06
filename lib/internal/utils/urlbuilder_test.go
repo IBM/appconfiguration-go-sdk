@@ -17,14 +17,14 @@
 package utils
 
 import (
-	"github.com/IBM/go-sdk-core/v5/core"
+	"sync"
 	"testing"
 
+	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestURLBuilder(t *testing.T) {
-
 	// test websocket url
 	urlBuilder := GetInstance()
 	urlBuilder.SetWebSocketURL("wss://test-service.com/apprapp/wsfeature?instance_id=guid&collection_id=CollectionID&environment_id=EnvironmentID")
@@ -57,9 +57,32 @@ func TestURLBuilder(t *testing.T) {
 	token := urlBuilder.GetToken()
 	assert.Equal(t, 0, len(token))
 	resetURLBuilderInstance()
+}
 
+func TestURLBuilderSingletonConcurrent(t *testing.T) {
+	resetURLBuilderInstance()
+	defer resetURLBuilderInstance()
+
+	const numGoroutines = 50
+	instances := make([]*URLBuilder, numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			instances[idx] = GetInstance()
+		}(i)
+	}
+	wg.Wait()
+
+	first := instances[0]
+	assert.NotNil(t, first)
+	for i := 1; i < numGoroutines; i++ {
+		assert.Same(t, first, instances[i], "all goroutines should receive the same URLBuilder instance")
+	}
 }
 
 func resetURLBuilderInstance() {
-	urlBuilderInstance = nil
+	ResetURLBuilderInstance()
 }

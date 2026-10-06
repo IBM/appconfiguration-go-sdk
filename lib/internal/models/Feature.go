@@ -23,8 +23,9 @@ import (
 
 	"sort"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/emirpasic/gods/maps/treemap"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 // Feature : Feature struct
@@ -86,7 +87,7 @@ func (f *Feature) GetFeatureDataFormat() string {
 // GetRolloutPercentage : Get the Feature flag rollout percentage
 func (f *Feature) GetRolloutPercentage() int {
 	if f.RolloutPercentage == nil {
-		var v int = 100
+		var v = 100
 		f.RolloutPercentage = &v
 	}
 	return *f.RolloutPercentage
@@ -118,7 +119,7 @@ func (f *Feature) IsEnabled() bool {
 // specified entity satisfies the targeting rules, and returns the appropriate feature flag value.
 func (f *Feature) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) interface{} {
 	log.Debug(messages.RetrievingFeature)
-	if len(entityID) <= 0 {
+	if len(entityID) == 0 {
 		log.Error("Feature flag evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil
 	}
@@ -140,11 +141,10 @@ func (f *Feature) GetCurrentValue(entityID string, entityAttributes ...map[strin
 }
 
 func (f *Feature) isFeatureValid() bool {
-	return !(f.Name == "" || f.FeatureID == "" || f.DataType == "" || f.EnabledValue == nil || f.DisabledValue == nil)
+	return f.Name != "" && f.FeatureID != "" && f.DataType != "" && f.EnabledValue != nil && f.DisabledValue != nil
 }
 func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string]interface{}) (interface{}, bool) {
-
-	var evaluatedSegmentID string = constants.DefaultSegmentID
+	var evaluatedSegmentID = constants.DefaultSegmentID
 	defer func() {
 		utils.GetMeteringInstance().RecordEvaluation(f.GetFeatureID(), "", entityID, evaluatedSegmentID)
 	}()
@@ -154,8 +154,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 		defer utils.GracefullyHandleError()
 
 		if len(f.GetSegmentRules()) > 0 && len(entityAttributes) > 0 {
-			var rulesMap map[int]SegmentRule
-			rulesMap = f.parseRules(f.GetSegmentRules())
+			var rulesMap = f.parseRules(f.GetSegmentRules())
 
 			// sort the map elements as per ascending order of keys
 			var keys []int
@@ -169,7 +168,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 				segmentRule := rulesMap[k]
 				for _, rule := range segmentRule.GetRules() {
 					for _, segmentKey := range rule.Segments {
-						if f.evaluateSegment(string(segmentKey), entityAttributes) {
+						if f.evaluateSegment(segmentKey, entityAttributes) {
 							evaluatedSegmentID = segmentKey
 							var segmentLevelRolloutPercentage int
 
@@ -237,8 +236,7 @@ func (f *Feature) featureEvaluation(entityID string, entityAttributes map[string
 func (f *Feature) parseRules(segmentRules []SegmentRule) map[int]SegmentRule {
 	log.Debug(messages.ParsingFeatureRules)
 	defer utils.GracefullyHandleError()
-	var rulesMap map[int]SegmentRule
-	rulesMap = make(map[int]SegmentRule)
+	var rulesMap = make(map[int]SegmentRule)
 	for _, rule := range segmentRules {
 		rulesMap[rule.GetOrder()] = rule
 	}

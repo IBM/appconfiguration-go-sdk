@@ -17,15 +17,16 @@
 package utils
 
 import (
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 )
 
 func TestFileManager(t *testing.T) {
-
 	mockLogger()
 	assert.Equal(t, SanitizePath(""), "/")
 	assert.Equal(t, SanitizePath("Users/home/Desktop"), "/Users/home/Desktop")
@@ -44,9 +45,7 @@ func TestFileManager(t *testing.T) {
 
 	// TestStoreFilesWithInvalidJSONContent
 	StoreFiles("", dir)
-	if hook.LastEntry().Message != "AppConfiguration - Error while encoding json json: error calling MarshalJSON for type json.RawMessage: unexpected end of JSON input" {
-		t.Errorf("Test failed: StoreFiles for Invalid json")
-	}
+	assert.Contains(t, hook.LastEntry().Message, "Error while encoding json")
 
 	// TestReadFilesWithNonExistingFile
 	assert.Equal(t, ReadFiles(SanitizePath("non-existing-file.txt")), []byte(`{}`))

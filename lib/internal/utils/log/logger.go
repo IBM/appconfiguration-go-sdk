@@ -16,8 +16,9 @@
 package log
 
 import (
-	"github.com/sirupsen/logrus"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 var logger *logrus.Logger

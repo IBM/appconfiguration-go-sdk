@@ -19,10 +19,11 @@ package models
 import (
 	"errors"
 
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 	"github.com/IBM/go-sdk-core/v5/core"
 	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 // SecretProperty : SecretProperty struct
@@ -42,8 +43,7 @@ type SecretProperty struct {
 // This is an optional parameter if the property is not configured with any targeting definition.
 // If the targeting is configured, then entityAttributes should be provided for the rule evaluation.
 func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...map[string]interface{}) (result sm.SecretIntf, response *core.DetailedResponse, err error) {
-
-	if len(entityID) <= 0 {
+	if len(entityID) == 0 {
 		log.Error("SecretProperty evaluation: ", messages.InvalidEntityId, "GetCurrentValue")
 		return nil, nil, errors.New("error: " + messages.InvalidEntityId + "GetCurrentValue")
 	}
@@ -73,7 +73,7 @@ func (sp *SecretProperty) GetCurrentValue(entityID string, entityAttributes ...m
 	}
 	if secretID, secretIDExist := valMap["id"]; secretIDExist {
 		id := secretID.(string)
-		//sm sdk call
+		// sm sdk call
 		secretsManagerService := GetCacheInstance().SecretManagerMap[sp.PropertyID].(*sm.SecretsManagerV2)
 		getSecretOptions := secretsManagerService.NewGetSecretOptions(
 			id,

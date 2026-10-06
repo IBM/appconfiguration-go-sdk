@@ -23,11 +23,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/IBM/go-sdk-core/v5/core"
+	"github.com/robfig/cron"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	messages "github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"github.com/IBM/go-sdk-core/v5/core"
-	"github.com/robfig/cron"
 )
 
 // Usages : Usages struct
@@ -95,26 +96,38 @@ const delimiter = "\u001F"
 // SendInterval : SendInterval struct
 const SendInterval = "10m"
 
-var meteringInstance *Metering
+var (
+	meteringInstance *Metering
+	meteringOnce     sync.Once
+)
 
 func GetMeteringInstance() *Metering {
 	log.Debug(messages.RetrieveMeteringInstance)
-	if meteringInstance == nil {
-		meteringInstance = &Metering{}
-		meteringInstance.meteringFeatureData = make(map[string]*meteringRecord)
-		meteringInstance.meteringPropertyData = make(map[string]*meteringRecord)
+	meteringOnce.Do(func() {
+		meteringInstance = &Metering{
+			meteringFeatureData:  make(map[string]*meteringRecord),
+			meteringPropertyData: make(map[string]*meteringRecord),
+		}
 		log.Debug(messages.StartSendingMeteringData)
 		c := cron.New()
 		c.AddFunc("@every "+SendInterval, meteringInstance.sendMetering)
 		c.Start()
-	}
+	})
 	return meteringInstance
 }
 
+// used for testing purposes only
+func ResetMeteringInstance() {
+	meteringInstance = nil
+	meteringOnce = sync.Once{}
+}
+
 func (mt *Metering) Init(guid string, environmentID string, collectionID string) {
+	mt.mu.Lock()
 	mt.guid = guid
 	mt.EnvironmentID = environmentID
 	mt.CollectionID = collectionID
+	mt.mu.Unlock()
 }
 
 func (mt *Metering) addMetering(entityID string, segmentID string, featureID string, propertyID string) {
@@ -126,27 +139,31 @@ func (mt *Metering) addMetering(entityID string, segmentID string, featureID str
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 
-	var meteringData map[string]*meteringRecord
 	var modifyKey string
 	if featureID != "" {
-		meteringData = meteringInstance.meteringFeatureData
 		modifyKey = featureID
 	} else {
-		meteringData = meteringInstance.meteringPropertyData
 		modifyKey = propertyID
 	}
 
 	key := buildCompositeKey(modifyKey, entityID, segmentID)
-	
+
+	// select the map by holding the lock, so that it is not raced when rotation is performed by sendMetering()
 	mt.mu.Lock()
+	defer mt.mu.Unlock()
+
+	var meteringData map[string]*meteringRecord
+	if featureID != "" {
+		meteringData = mt.meteringFeatureData
+	} else {
+		meteringData = mt.meteringPropertyData
+	}
 	record, exists := meteringData[key]
 	if exists {
-		mt.mu.Unlock()
 		record.increment(formattedTime)
-	} else {
-		meteringData[key] = newMeteringRecord(formattedTime)
-		mt.mu.Unlock()
+		return
 	}
+	meteringData[key] = newMeteringRecord(formattedTime)
 }
 
 func (mt *Metering) RecordEvaluation(featureID string, propertyID string, entityID string, segmentID string) {
@@ -193,21 +210,23 @@ func (mt *Metering) sendMetering() {
 	currentPropertyData := mt.meteringPropertyData
 	mt.meteringFeatureData = make(map[string]*meteringRecord)
 	mt.meteringPropertyData = make(map[string]*meteringRecord)
+	snapshotCollection := mt.CollectionID
+	snapshotEnvironment := mt.EnvironmentID
 	mt.mu.Unlock()
 
 	log.Debug(currentFeatureData)
 	log.Debug(currentPropertyData)
-	
+
 	if len(currentFeatureData) == 0 && len(currentPropertyData) == 0 {
 		return
 	}
 
 	collectionUsages := CollectionUsages{
-		CollectionID:  mt.CollectionID,
-		EnvironmentID: mt.EnvironmentID,
+		CollectionID:  snapshotCollection,
+		EnvironmentID: snapshotEnvironment,
 		Usages:        []Usages{},
 	}
-	
+
 	if len(currentFeatureData) > 0 {
 		mt.buildRequestBody(currentFeatureData, &collectionUsages, "feature_id")
 	}
@@ -223,7 +242,7 @@ func (mt *Metering) sendMetering() {
 	}
 }
 func (mt *Metering) sendSplitMetering(collectionUsages CollectionUsages, count int) {
-	var lim int = 0
+	var lim = 0
 	subUsages := collectionUsages.Usages
 	for lim < count {
 		var endIndex int
@@ -239,15 +258,20 @@ func (mt *Metering) sendSplitMetering(collectionUsages CollectionUsages, count i
 			collectionUsageElem.Usages = append(collectionUsageElem.Usages, subUsages[i])
 		}
 		mt.sendToServer(collectionUsageElem)
-		lim = lim + constants.DefaultUsageLimit
+		lim += constants.DefaultUsageLimit
 	}
 }
 func (mt *Metering) sendToServer(collectionUsages CollectionUsages) {
 	log.Debug(messages.SendMeteringServer)
 	log.Debug(collectionUsages)
+
+	mt.mu.Lock()
+	guid := mt.guid
+	mt.mu.Unlock()
+
 	builder := core.NewRequestBuilder(core.POST)
 	pathParamsMap := map[string]string{
-		"guid": mt.guid,
+		"guid": guid,
 	}
 	_, err := builder.ResolveRequestURL(urlBuilderInstance.GetBaseServiceURL(), `/apprapp/events/v1/instances/{guid}/usage`, pathParamsMap)
 	if err != nil {

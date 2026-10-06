@@ -1,0 +1,78 @@
+version: "2"
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  tests: true
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - gocritic
+    - gosec
+    - nilerr
+    - noctx
+    - unconvert
+    - unparam
+    - whitespace
+  disable:
+    - depguard
+    - exhaustruct
+    - nlreturn
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable:
+        - shadow
+        - structtag
+        - atomic
+        - lostcancel
+        - copylocks
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+          - unparam
+        path: _test\.go
+      - linters:
+          - errcheck
+          - gocritic
+          - gosec
+        path: examples/
+      # TODO: 44 pre-existing issues suppressed as of v0.6.0 release branch.
+      # Remove these exclusion rules after they are fixed post-release.
+      - linters:
+          - bodyclose
+          - errcheck
+          - gocritic
+          - govet
+          - ineffassign
+          - noctx
+          - staticcheck
+          - unparam
+        text: ".*"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 10
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

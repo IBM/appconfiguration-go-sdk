@@ -1,0 +1,202 @@
+name: CI
+
+on:
+  merge_group:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches: ["**"]
+    paths-ignore:
+      - '**/*.md'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+env:
+  GOTOOLCHAIN: local
+  GOLANGCI_LINT_VERSION: v2.14.0
+  TPARSE_VERSION: v0.18.0
+
+jobs:
+  lint:
+    name: Lint
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Verify go.mod
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Check formatting
+        run: |
+          out=$(gofmt -l $(find . -name '*.go'))
+          if [ -n "$out" ]; then
+            echo "The following files are not gofmt-formatted:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9.3.0
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          args: --config=.golangci.yml
+
+  test:
+    name: Unit Testing with Go ${{ matrix.go-version }}
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: [oldstable, stable]
+    env:
+      GOFLAGS: -trimpath
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build ./...
+
+      - name: Run tests
+        run: |
+          go test -race -count=1 -timeout=120s -coverprofile=coverage.out -covermode=atomic -json ./... | tee _test_output.json
+          # Exit with the test exit code, not tee's
+          exit ${PIPESTATUS[0]}
+
+      - name: Report Test Results
+        if: always()
+        run: |
+          go run github.com/mfridman/tparse@${TPARSE_VERSION} -all -format markdown -file _test_output.json | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Report Per-Func Test Coverage
+        if: always()
+        run: |
+          cat >>$GITHUB_STEP_SUMMARY <<'EOF'
+          <details>
+          <summary>Click for per-func code coverage</summary>
+
+          |Filename|Function|Coverage|
+          |--------|--------|--------|
+          EOF
+          go tool cover -func=coverage.out | sed -E -e 's/[[:space:]]+/|/g' -e 's/$/|/g' -e 's/^/|/g' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          flags: unittests
+          fail_ci_if_error: false
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  pre-commit:
+    name: Pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python (for pre-commit)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: stable
+          cache: true
+
+      - name: Run pre-commit hooks
+        run: |
+          pip install pre-commit
+          SKIP=go-unit-tests pre-commit run --all-files
+
+  ci-success:
+    name: CI passed
+    runs-on: ubuntu-latest
+    needs: [lint, test, security, pre-commit]
+    if: always()
+    steps:
+      - name: Check all required jobs passed
+        run: |
+          results='${{ toJSON(needs) }}'
+          echo "Job results: $results"
+
+          for job in lint test security pre-commit; do
+            result=$(echo "$results" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          job = '$job'
+          print(data.get(job, {}).get('result', 'missing'))
+          ")
+            if [[ "$result" != "success" ]]; then
+              echo "Job '$job' did not succeed (result: $result)"
+              exit 1
+            fi
+          done
+
+          echo "All CI jobs passed."

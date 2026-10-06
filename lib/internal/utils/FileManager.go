@@ -18,22 +18,24 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
-	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
+	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
 )
 
 var fileMutex sync.Mutex
 
 // SanitizePath : Sanitises the string path and restrict users from providing manipulated path
 // Example :
-//		input: ../../../etc/abc.conf
-//		output: /etc/abc.conf
+//
+//	input: ../../../etc/abc.conf
+//	output: /etc/abc.conf
 func SanitizePath(_path string) string {
 	return filepath.FromSlash(path.Clean("/" + strings.Trim(_path, "/")))
 }
@@ -51,7 +53,7 @@ func StoreFiles(content, basePath string) {
 		return
 	}
 	sanitizedFilePath := filepath.Join(SanitizePath(basePath), constants.ConfigurationFile)
-	err = ioutil.WriteFile(sanitizedFilePath, file, 0644)
+	err = os.WriteFile(sanitizedFilePath, file, 0644) //nolint:gosec // G306: File permissions 0644 intentional for cache reading
 	if err != nil {
 		log.Error(messages.WriteFileErr, err)
 		return
@@ -64,7 +66,7 @@ func ReadFiles(filePath string) []byte {
 	defer fileMutex.Unlock()
 
 	log.Debug(messages.ReadFile)
-	file, err := ioutil.ReadFile(filePath)
+	file, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Error(messages.ReadFileErr, err)
 		return []byte(`{}`)

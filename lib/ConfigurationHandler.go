@@ -26,15 +26,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/IBM/go-sdk-core/v5/core"
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/gorilla/websocket"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/constants"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"github.com/IBM/go-sdk-core/v5/core"
-	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
-	"github.com/emirpasic/gods/maps/treemap"
-	"github.com/gorilla/websocket"
 )
 
 // variable to keep track of status of server-client connection
@@ -52,7 +53,6 @@ type ConfigurationHandler struct {
 	region                      string
 	usePrivateEndpoint          bool
 	urlBuilder                  *utils.URLBuilder
-	appConfig                   *AppConfiguration
 	cache                       *models.Cache
 	configurationUpdateListener configurationUpdateListenerFunc
 	persistentCacheDirectory    string
@@ -66,14 +66,23 @@ type ConfigurationHandler struct {
 	mu                          sync.Mutex
 }
 
-var configurationHandlerInstance *ConfigurationHandler
+var (
+	configurationHandlerInstance *ConfigurationHandler
+	configurationHandlerOnce     sync.Once
+)
 
 // GetConfigurationHandlerInstance : Get Configuration Handler Instance
 func GetConfigurationHandlerInstance() *ConfigurationHandler {
-	if configurationHandlerInstance == nil {
+	configurationHandlerOnce.Do(func() {
 		configurationHandlerInstance = new(ConfigurationHandler)
-	}
+	})
 	return configurationHandlerInstance
+}
+
+// used only for testing
+func ResetConfigurationHandlerInstance() {
+	configurationHandlerInstance = nil
+	configurationHandlerOnce = sync.Once{}
 }
 
 // Init : Init App Configuration Instance
@@ -125,7 +134,6 @@ func (ch *ConfigurationHandler) loadData() {
 				} else {
 					ch.saveInCache(bootstrapConfigurations)
 					go utils.StoreFiles(string(models.FormatConfig(bootstrapConfigurations, ch.environmentID, ch.collectionID)), ch.persistentCacheDirectory)
-
 				}
 			}
 		} else {
@@ -374,7 +382,6 @@ func (ch *ConfigurationHandler) getFeature(featureID string) (models.Feature, er
 	}
 	log.Error(messages.InvalidFeatureID, featureID)
 	return models.Feature{}, errors.New(messages.ErrorInvalidFeatureID + featureID)
-
 }
 func (ch *ConfigurationHandler) getProperties() (map[string]models.Property, error) {
 	if ch.cache == nil {

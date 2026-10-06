@@ -17,9 +17,11 @@
 package utils
 
 import (
-	"github.com/IBM/go-sdk-core/v5/core"
 	"net/http"
 	"strings"
+	"sync"
+
+	"github.com/IBM/go-sdk-core/v5/core"
 )
 
 // URLBuilder : URLBuilder struct
@@ -38,11 +40,14 @@ type URLBuilder struct {
 	authenticator         core.Authenticator
 }
 
-var urlBuilderInstance *URLBuilder
+var (
+	urlBuilderInstance *URLBuilder
+	urlBuilderOnce     sync.Once
+)
 
 // GetInstance : Get Instance
 func GetInstance() *URLBuilder {
-	if urlBuilderInstance == nil {
+	urlBuilderOnce.Do(func() {
 		urlBuilderInstance = &URLBuilder{
 			baseURL:               ".apprapp.cloud.ibm.com",
 			privateEndpointPrefix: "private.",
@@ -56,8 +61,14 @@ func GetInstance() *URLBuilder {
 			region:                "",
 			guid:                  "",
 		}
-	}
+	})
 	return urlBuilderInstance
+}
+
+// used only for testing
+func ResetURLBuilderInstance() {
+	urlBuilderInstance = nil
+	urlBuilderOnce = sync.Once{}
 }
 
 // Init : Init
@@ -76,7 +87,6 @@ func (ub *URLBuilder) Init(collectionID string, environmentID string, region str
 			ub.httpBase = overrideServiceUrl
 			ub.iamURL = "https://iam.test.cloud.ibm.com"
 			ub.webSocketURL = "wss://" + temp[1] + ub.service + ub.wsPath + "?instance_id=" + guid + "&collection_id=" + collectionID + "&environment_id=" + environmentID
-
 		}
 		// for prod
 	} else {
@@ -125,8 +135,7 @@ func (ub *URLBuilder) GetWebSocketURL() string {
 // GetToken returns the string "Bearer <token>"
 func (ub *URLBuilder) GetToken() string {
 	req, _ := http.NewRequest("GET", "https://localhost", nil)
-	var err error
-	err = ub.authenticator.Authenticate(req)
+	var err = ub.authenticator.Authenticate(req)
 	if err != nil {
 		return ""
 	}

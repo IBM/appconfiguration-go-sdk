@@ -10,15 +10,15 @@ the `ibm-appconfiguration` tags.
 
 ## Coding Style
 
-The SDK follows the Go coding conventions documented [here](https://golang.org/doc/effective_go.html). 
+The SDK follows the Go coding conventions documented [here](https://golang.org/doc/effective_go.html).
 
 ### Running Linter
 Linter is a tool that analyzes source code to flag programming errors, bugs, stylistic errors, and suspicious constructs.
-Golint is a useful Go linting tool that prints out coding style mistakes. 
+Golint is a useful Go linting tool that prints out coding style mistakes.
 
 Perform the following steps to run "golint" on this SDK :-
 - Ensure that local GOPATH and GOBIN are fully setup by using the go env command.
-- Install the package by using the command 
+- Install the package by using the command
     ```
     go get -u golang.org/x/lint/golint
     ```
@@ -84,4 +84,3 @@ By making a contribution to this project, I certify that:
    personal information I submit with it, including my sign-off) is
    maintained indefinitely and may be redistributed consistent with
    this project or the open source license(s) involved.
-

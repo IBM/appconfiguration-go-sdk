@@ -1,4 +1,4 @@
-# IBM Cloud App Configuration Go server SDK 0.5.11
+# IBM Cloud App Configuration Go server SDK 0.6.0
 
 IBM Cloud App Configuration SDK is used to perform feature flag and property evaluation based on the configuration on
 IBM Cloud App Configuration service.
@@ -24,7 +24,7 @@ the cloud to activate or deactivate features in your application or environment,
 properties for distributed applications centrally.
 
 ## Prerequisites
-- Go version 1.23 or newer
+- Go version 1.26 or newer
 
 
 ## Installation
@@ -154,7 +154,7 @@ if err == nil {
 features, err := appConfigClient.GetFeatures()
 if err == nil {
     feature := features["online-check-in"]
-    
+
     fmt.Println("Feature Name", feature.GetFeatureName())
     fmt.Println("Feature Id", feature.GetFeatureID())
     fmt.Println("Feature Type", feature.GetFeatureDataType())
@@ -204,7 +204,7 @@ if err == nil {
 properties, err := appConfigClient.GetProperties()
 if err == nil {
     property := properties["check-in-charges"]
-    
+
     fmt.Println("Property Name", property.GetPropertyName())
     fmt.Println("Property Id", property.GetPropertyID())
     fmt.Println("Property Type", property.GetPropertyDataType())
@@ -302,7 +302,7 @@ secretData := detailedResponse.Result.(*sm.KVSecret).Data["key1"]
 secretData := detailedResponse.Result.(*sm.KVSecret).Data["key2"]
 ```
 
-The GetCurrentValue will be sending the 3 objects as part of response. 
+The GetCurrentValue will be sending the 3 objects as part of response.
 
 * getSecretRes: this will give the meta data and payload.
 * detailedResponse: this will give entire data which includes the http response header data, meta data and payload.
@@ -351,7 +351,7 @@ feature, err := appConfigClient.GetFeature("json-feature")
 if err == nil {
     feature.GetFeatureDataType() // STRING
     feature.GetFeatureDataFormat() // JSON
-    
+
     // Example (traversing the returned map)
     result := feature.GetCurrentValue(entityID, entityAttributes) // JSON value is returned as a Map
     result.(map[string]interface{})["key"] // returns the value of the key
@@ -361,7 +361,7 @@ feature, err := appConfigClient.GetFeature("yaml-feature")
 if err == nil {
     feature.GetFeatureDataType() // STRING
     feature.GetFeatureDataFormat() // YAML
-    
+
     // Example (traversing the returned map)
     result := feature.GetCurrentValue(entityID, entityAttributes) // YAML value is returned as a Map
     result.(map[string]interface{})["key"] // returns the value of the key
@@ -408,12 +408,6 @@ appConfigClient.RegisterConfigurationUpdateListener(func () {
       // feature, err := appConfigClient.GetFeature("json-feature")
       // newValue := feature.GetCurrentValue(entityID, entityAttributes)
 })
-```
-
-## Fetch latest data
-
-```go
-appConfigClient.FetchConfigurations()
 ```
 
 ## Enable debugger (Optional)

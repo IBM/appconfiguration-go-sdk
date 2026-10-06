@@ -18,11 +18,14 @@ package lib
 
 import (
 	"errors"
+	"path/filepath"
+	"sync"
+
+	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/models"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	sm "github.com/IBM/secrets-manager-go-sdk/v2/secretsmanagerv2"
-	"path/filepath"
 )
 
 // AppConfiguration : Struct having init and configInstance.
@@ -39,7 +42,10 @@ type ContextOptions struct {
 	LiveConfigUpdateEnabled  bool
 }
 
-var appConfigurationInstance *AppConfiguration
+var (
+	appConfigurationInstance *AppConfiguration
+	appConfigurationOnce     sync.Once
+)
 
 var overrideServiceUrl = ""
 
@@ -74,10 +80,16 @@ const REGION_JP_OSA = "jp-osa"
 // GetInstance : Get App Configuration Instance
 func GetInstance() *AppConfiguration {
 	log.Debug(messages.RetrieveingAppConfig)
-	if appConfigurationInstance == nil {
+	appConfigurationOnce.Do(func() {
 		appConfigurationInstance = new(AppConfiguration)
-	}
+	})
 	return appConfigurationInstance
+}
+
+// note: should be used for testing purposes only
+func ResetAppConfigurationInstance() {
+	appConfigurationInstance = nil
+	appConfigurationOnce = sync.Once{}
 }
 
 // IsConnected method returns the server-client connection status as a boolean
@@ -162,15 +174,6 @@ func (ac *AppConfiguration) SetContext(collectionID string, environmentID string
 	ac.configurationHandlerInstance.loadData()
 }
 
-// FetchConfigurations : Fetch Configurations
-func (ac *AppConfiguration) FetchConfigurations() {
-	if ac.isInitialized && ac.isInitializedConfig {
-		go ac.configurationHandlerInstance.loadData()
-	} else {
-		log.Error(messages.CollectionInitError)
-	}
-}
-
 // RegisterConfigurationUpdateListener : Register Configuration Update Listener
 func (ac *AppConfiguration) RegisterConfigurationUpdateListener(fhl configurationUpdateListenerFunc) {
 	if ac.isInitialized && ac.isInitializedConfig {
@@ -182,7 +185,7 @@ func (ac *AppConfiguration) RegisterConfigurationUpdateListener(fhl configuratio
 
 // GetFeature : Get Feature
 func (ac *AppConfiguration) GetFeature(featureID string) (models.Feature, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getFeature(featureID)
 	}
 	log.Error(messages.CollectionInitError)
@@ -191,7 +194,7 @@ func (ac *AppConfiguration) GetFeature(featureID string) (models.Feature, error)
 
 // GetFeatures : Get Features
 func (ac *AppConfiguration) GetFeatures() (map[string]models.Feature, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getFeatures()
 	}
 	log.Error(messages.CollectionInitError)
@@ -200,7 +203,7 @@ func (ac *AppConfiguration) GetFeatures() (map[string]models.Feature, error) {
 
 // GetProperty : Get Property
 func (ac *AppConfiguration) GetProperty(propertyID string) (models.Property, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getProperty(propertyID)
 	}
 	log.Error(messages.CollectionInitError)
@@ -209,7 +212,7 @@ func (ac *AppConfiguration) GetProperty(propertyID string) (models.Property, err
 
 // GetProperties : Get Properties
 func (ac *AppConfiguration) GetProperties() (map[string]models.Property, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		return ac.configurationHandlerInstance.getProperties()
 	}
 	log.Error(messages.CollectionInitError)
@@ -218,7 +221,7 @@ func (ac *AppConfiguration) GetProperties() (map[string]models.Property, error) 
 
 // GetSecret : Get Secret
 func (ac *AppConfiguration) GetSecret(propertyID string, secretsManagerService *sm.SecretsManagerV2) (models.SecretProperty, error) {
-	if ac.isInitializedConfig == true && ac.configurationHandlerInstance != nil {
+	if ac.isInitializedConfig && ac.configurationHandlerInstance != nil {
 		if secretsManagerService != nil {
 			return ac.configurationHandlerInstance.getSecret(propertyID, secretsManagerService)
 		} else {

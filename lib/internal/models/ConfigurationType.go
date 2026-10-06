@@ -17,9 +17,10 @@
 package models
 
 import (
+	"gopkg.in/yaml.v3"
+
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/messages"
 	"github.com/IBM/appconfiguration-go-sdk/lib/internal/utils/log"
-	"gopkg.in/yaml.v3"
 )
 
 func IsValidDataType(category string) bool {
@@ -35,7 +36,6 @@ func IsValidDataType(category string) bool {
 }
 
 func getTypeCastedValue(val interface{}, valType string, valFormat string) interface{} {
-
 	if valType == "NUMERIC" && isNumber(val) {
 		return val.(float64)
 	} else if valType == "BOOLEAN" && isBool(val) {
