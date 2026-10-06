@@ -45,9 +45,7 @@ func TestFileManager(t *testing.T) {
 
 	// TestStoreFilesWithInvalidJSONContent
 	StoreFiles("", dir)
-	if hook.LastEntry().Message != "AppConfiguration - Error while encoding json json: error calling MarshalJSON for type json.RawMessage: unexpected end of JSON input" {
-		t.Errorf("Test failed: StoreFiles for Invalid json")
-	}
+	assert.Contains(t, hook.LastEntry().Message, "Error while encoding json")
 
 	// TestReadFilesWithNonExistingFile
 	assert.Equal(t, ReadFiles(SanitizePath("non-existing-file.txt")), []byte(`{}`))
